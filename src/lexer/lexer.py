@@ -74,10 +74,10 @@ class Lexer:
         'finally', 'raise', 'with', 'global', 'nonlocal', 'lambda'
     }
     
-    # Regular expressions for token matching
+    # Regular expressions for token matching (order matters: longer matches first)
     token_specification = [
-        ('INTEGER', r'\d+'),
         ('FLOAT', r'\d+\.\d*'),
+        ('INTEGER', r'\d+'),
         ('STRING', r'"[^"]*"|\'[^\']*\''),  # Handle both " and ' strings
         ('IDENTIFIER', r'[a-zA-Z_][a-zA-Z0-9_]*'),
         ('EQUAL_EQUAL', r'=='),
