@@ -41,6 +41,8 @@ class TokenType(Enum):
     
     # Special
     NEWLINE = "NEWLINE"
+    INDENT = "INDENT"
+    DEDENT = "DEDENT"
     EOF = "EOF"
     COMMENT = "COMMENT"
 
@@ -118,26 +120,64 @@ class Lexer:
         self.token_regex = re.compile('|'.join(f'(?P<{name}>{pattern})' for name, pattern in self.token_specification))
     
     def tokenize(self) -> List[Token]:
-        """Tokenize the source code"""
+        """Tokenize the source code, producing INDENT/DEDENT tokens
+        based on the leading whitespace of each non-blank line."""
         self.tokens = []
         self.pos = 0
         self.line = 1
         self.column = 1
-        
+        indent_stack: List[int] = [0]
+        at_line_start = True
+
         while self.pos < len(self.source):
+            # Handle indentation at the start of a line
+            if at_line_start:
+                at_line_start = False
+                # Measure indent (spaces, treating tabs as 4 spaces)
+                indent = 0
+                while self.pos < len(self.source) and self.source[self.pos] in (' ', '\t'):
+                    if self.source[self.pos] == '\t':
+                        indent += 4
+                    else:
+                        indent += 1
+                    self.pos += 1
+                    self.column += 1
+                # Skip blank lines and comment-only lines
+                if self.pos >= len(self.source) or self.source[self.pos] == '\n' or self.source[self.pos] == '#':
+                    # continue to main loop to skip the rest of the line
+                    pass
+                else:
+                    if indent > indent_stack[-1]:
+                        indent_stack.append(indent)
+                        self.tokens.append(Token(TokenType.INDENT, indent, self.line, self.column))
+                    elif indent < indent_stack[-1]:
+                        while indent_stack and indent_stack[-1] > indent:
+                            indent_stack.pop()
+                            self.tokens.append(Token(TokenType.DEDENT, indent, self.line, self.column))
+                        if not indent_stack or indent_stack[-1] != indent:
+                            raise SyntaxError(
+                                f"Indentation does not match any outer level at line {self.line}"
+                            )
+                    # `at_line_start` is reset implicitly at the next newline
+
+            if self.pos >= len(self.source):
+                break
+
             match = self.token_regex.match(self.source, self.pos)
             if not match:
-                raise SyntaxError(f"Illegal character at line {self.line}, column {self.column}: {self.source[self.pos]}")
-            
+                raise SyntaxError(
+                    f"Illegal character at line {self.line}, column {self.column}: "
+                    f"{self.source[self.pos]!r}"
+                )
+
             token_type = match.lastgroup
             value = match.group()
-            
+
             if token_type == 'INTEGER':
                 token = Token(TokenType.INTEGER, int(value), self.line, self.column)
             elif token_type == 'FLOAT':
                 token = Token(TokenType.FLOAT, float(value), self.line, self.column)
             elif token_type == 'STRING':
-                # Remove quotes
                 token = Token(TokenType.STRING, value.strip('\"\''), self.line, self.column)
             elif token_type == 'IDENTIFIER':
                 if value in self.KEYWORDS:
@@ -148,24 +188,30 @@ class Lexer:
                 token = Token(TokenType.NEWLINE, value, self.line, self.column)
                 self.line += 1
                 self.column = 1
+                at_line_start = True
             elif token_type == 'SKIP':
-                # Skip whitespace
-                pass
+                token = None  # ignore
             elif token_type == 'COMMENT':
                 token = Token(TokenType.COMMENT, value, self.line, self.column)
             elif token_type == 'MISMATCH':
-                raise SyntaxError(f"Illegal character at line {self.line}, column {self.column}: {value}")
+                raise SyntaxError(
+                    f"Illegal character at line {self.line}, column {self.column}: {value!r}"
+                )
             else:
-                # Handle punctuation and operators
                 token_type_enum = self._get_token_type_from_string(token_type)
                 token = Token(token_type_enum, value, self.line, self.column)
-            
-            if token_type != 'SKIP':
+
+            if token is not None:
                 self.tokens.append(token)
-            
+
             self.pos = match.end()
             self.column += len(value)
-        
+
+        # Flush any remaining DEDENTs
+        while len(indent_stack) > 1:
+            indent_stack.pop()
+            self.tokens.append(Token(TokenType.DEDENT, 0, self.line, self.column))
+
         # Add EOF token
         self.tokens.append(Token(TokenType.EOF, '', self.line, self.column))
         return self.tokens

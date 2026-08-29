@@ -15,13 +15,15 @@ class Parser:
     
     def parse(self) -> Program:
         """Parse tokens into an AST Program"""
-        statements = []
-        
+        statements: List[Statement] = []
         while self.current_token and self.current_token.type != TokenType.EOF:
+            # Skip blank lines and stray DEDENTs at top level
+            if self.current_token.type in (TokenType.NEWLINE, TokenType.DEDENT):
+                self.advance()
+                continue
             stmt = self.parse_statement()
-            if stmt:
+            if stmt is not None:
                 statements.append(stmt)
-        
         return Program(statements)
     
     def parse_statement(self) -> Optional[Statement]:
@@ -60,26 +62,30 @@ class Parser:
         """Parse an expression statement"""
         node = self.parse_expression()
         return ExpressionStatement(node)
-    
+
     def parse_expression(self, precedence: int = 0) -> Expression:
-        """Parse an expression with given precedence"""
+        """Parse an expression using Pratt-style precedence climbing."""
         left = self.parse_primary()
-        
-        while self.current_token.type != TokenType.EOF and self.get_precedence(self.current_token.type) > precedence:
+        while (self.current_token.type != TokenType.EOF
+               and self.get_precedence(self.current_token.type) > precedence):
             token = self.current_token
+            token_prec = self.get_precedence(token.type)
             self.advance()
-            
-            if token.type in (TokenType.PLUS, TokenType.MINUS, TokenType.MULTIPLY, TokenType.DIVIDE):
-                right = self.parse_expression(self.get_precedence(token.type))
+            if token.type in (TokenType.PLUS, TokenType.MINUS,
+                              TokenType.MULTIPLY, TokenType.DIVIDE,
+                              TokenType.LESS, TokenType.GREATER,
+                              TokenType.LESS_EQUAL, TokenType.GREATER_EQUAL,
+                              TokenType.EQUAL_EQUAL, TokenType.NOT_EQUAL):
+                right = self.parse_expression(token_prec)
                 left = BinaryExpression(left, token.type, right)
             elif token.type == TokenType.EQUAL:
-                right = self.parse_expression()
+                # Right-associative assignment
+                right = self.parse_expression(token_prec - 1)
                 left = AssignmentExpression(left, right)
             elif token.type == TokenType.LPAREN:
-                # Function call
+                # Function call (highest precedence, left-associative)
                 args = self.parse_argument_list()
                 left = FunctionCall(left, args)
-            
         return left
     
     def parse_primary(self) -> Expression:
@@ -112,26 +118,33 @@ class Parser:
         raise SyntaxError(f"Unexpected token: {token.type} at line {token.line}")
     
     def parse_argument_list(self) -> List[Expression]:
-        """Parse argument list for function calls"""
-        args = []
-        
+        """Parse argument list for function calls. The opening '(' has
+        already been consumed by parse_expression; we just parse the args
+        and expect the closing ')'."""
+        args: List[Expression] = []
         if self.current_token.type != TokenType.RPAREN:
             args.append(self.parse_expression())
-            
             while self.current_token.type == TokenType.COMMA:
                 self.advance()
                 args.append(self.parse_expression())
-        
+        self.expect(TokenType.RPAREN)
         return args
     
     def get_precedence(self, token_type: TokenType) -> int:
-        """Get precedence of an operator"""
+        """Get precedence of an operator. Higher number = tighter binding."""
         precedence = {
-            TokenType.PLUS: 1,
-            TokenType.MINUS: 1,
-            TokenType.MULTIPLY: 2,
-            TokenType.DIVIDE: 2,
-            TokenType.EQUAL: 3,
+            TokenType.EQUAL: 1,           # lowest (assignment, right-assoc)
+            TokenType.EQUAL_EQUAL: 2,
+            TokenType.NOT_EQUAL: 2,
+            TokenType.LESS: 2,
+            TokenType.GREATER: 2,
+            TokenType.LESS_EQUAL: 2,
+            TokenType.GREATER_EQUAL: 2,
+            TokenType.PLUS: 3,
+            TokenType.MINUS: 3,
+            TokenType.MULTIPLY: 4,
+            TokenType.DIVIDE: 4,
+            TokenType.LPAREN: 10,         # function call (postfix)
         }
         return precedence.get(token_type, 0)
 
@@ -305,18 +318,30 @@ class Parser:
         return FromImportStatement(module, name)
 
     def parse_block(self) -> List[Statement]:
-        """Parse a block of statements terminated by NEWLINE/EOF."""
+        """Parse an indented block. Expects the current token to be NEWLINE,
+        then INDENT, then a sequence of statements, then a matching DEDENT."""
         statements: List[Statement] = []
-        # Skip any leading newlines after the ':'
+        # Skip optional blank lines after the ':'
         while self.current_token.type == TokenType.NEWLINE:
             self.advance()
-        while self.current_token.type != TokenType.EOF:
+        if self.current_token.type != TokenType.INDENT:
+            # Single-line block (e.g. on the same line as ':')
             stmt = self.parse_statement()
             if stmt is not None:
                 statements.append(stmt)
-            # Skip newlines between statements
+            return statements
+        self.advance()  # consume INDENT
+        while self.current_token.type not in (TokenType.DEDENT, TokenType.EOF):
+            # Skip stray newlines between statements
+            if self.current_token.type == TokenType.NEWLINE:
+                self.advance()
+                continue
+            stmt = self.parse_statement()
+            if stmt is not None:
+                statements.append(stmt)
+            # Skip newlines after each statement
             while self.current_token.type == TokenType.NEWLINE:
                 self.advance()
-            if self.current_token.type == TokenType.EOF:
-                break
+        if self.current_token.type == TokenType.DEDENT:
+            self.advance()
         return statements
