@@ -192,7 +192,7 @@ class Lexer:
             elif token_type == 'SKIP':
                 token = None  # ignore
             elif token_type == 'COMMENT':
-                token = Token(TokenType.COMMENT, value, self.line, self.column)
+                token = None  # skip comments
             elif token_type == 'MISMATCH':
                 raise SyntaxError(
                     f"Illegal character at line {self.line}, column {self.column}: {value!r}"
