@@ -1,41 +1,97 @@
 # python-interpreter-revamped
 
-A Python interpreter implementation
+A small, clean Python-subset interpreter implemented from scratch: **lexer → parser → AST → tree-walking interpreter + REPL**.
 
 ## Overview
-This project implements a Python interpreter from scratch, covering the core components needed to understand how Python interpreters work.
+This project implements a Python interpreter pipeline, covering all the core components needed to understand how Python works under the hood:
+
+1. **Lexer** — converts source text into a stream of typed tokens (with proper INDENT/DEDENT handling).
+2. **Parser** — recursive-descent / Pratt-style precedence-climbing parser that builds an AST.
+3. **AST** — strongly-typed node hierarchy.
+4. **Interpreter** — tree-walking evaluator with scopes, closures, and control flow.
+5. **Builtins** — a small set of built-in functions and types.
+6. **REPL** — interactive read-eval-print loop.
 
 ## Project Structure
-- `src/` - Main interpreter source code
-  - `lexer/` - Lexical analysis
-  - `parser/` - Syntax parsing
-  - `ast/` - Abstract syntax tree
-  - `interpreter/` - Runtime execution
-  - `builtins/` - Built-in functions and types
-- `tests/` - Unit tests for the interpreter
-- `examples/` - Example programs to test the interpreter
-
-## Features
-- Lexer supporting Python tokens
-- Parser supporting Python grammar
-- Abstract syntax tree (AST) implementation
-- Basic interpreter functionality
-- Built-in types and functions
-- Error handling and reporting
-
-## How to Run
-1. Install Python dependencies (if any)
-2. Run the interpreter with Python code files
-3. Run tests to verify functionality
-
-## Usage
-```python
-# Run the interpreter on a Python file
-python interpreter.py your_program.py
-
-# Run tests
-python -m pytest tests/
+```
+revamped-interpreter/
+├── interpreter.py          # CLI entry point: run a file or start the REPL
+├── README.md
+├── .gitignore
+├── examples/               # Example programs the interpreter can run
+│   ├── hello.py
+│   ├── factorial.py
+│   └── sum.py
+├── src/
+│   ├── lexer/
+│   │   ├── __init__.py
+│   │   └── lexer.py        # Token, TokenType, Lexer
+│   ├── parser/
+│   │   ├── __init__.py
+│   │   └── parser.py       # Recursive-descent parser
+│   ├── ast/
+│   │   ├── __init__.py
+│   │   └── nodes.py        # AST node hierarchy
+│   ├── interpreter/
+│   │   ├── __init__.py
+│   │   └── interpreter.py  # Tree-walking evaluator
+│   └── builtins/
+│       ├── __init__.py
+│       ├── functions.py
+│       └── types.py
+└── tests/                  # unittest-based test suite (no extra deps)
+    ├── __init__.py
+    ├── test_lexer.py
+    ├── test_parser.py
+    └── test_interpreter.py
 ```
 
+## Features
+- **Lexical analysis** with proper ordering of multi-character operators (`==`, `<=`, `>=`, `!=`) and INDENT/DEDENT token emission
+- **Pratt-style precedence parsing** for expressions with correct operator associativity
+- **Control flow**: `if/else`, `while`, `for x in iterable:`, `return`
+- **Functions** with closures, recursion, and parameter binding
+- **Comparisons**: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- **Arithmetic**: `+`, `-`, `*`, `/` (true division)
+- **Built-ins**: `print`, `len`, `range`, `str`, `int`, `float`, `type`
+- **Comments** starting with `#`
+- **REPL** with `>>> ` prompt
+
+## How to Run
+
+### Run a Python file
+```bash
+python interpreter.py examples/factorial.py
+```
+
+### Start the REPL
+```bash
+python interpreter.py
+```
+
+### Run the test suite
+```bash
+python -m unittest discover -s tests -v
+```
+
+## Example Session
+```text
+$ python interpreter.py examples/factorial.py
+factorial of 1 is 1
+factorial of 2 is 2
+factorial of 3 is 6
+factorial of 4 is 24
+factorial of 5 is 120
+factorial of 6 is 720
+factorial of 7 is 5040
+```
+
+## Limitations (intentional, for educational scope)
+- No lists, dicts, or user-defined classes with attributes
+- No modules, packages, or `import` resolution
+- No `try/except`, `with`, comprehensions, lambdas, decorators
+- No integer division `//` or modulo `%` yet
+- No augmented assignment (`+=`, `-=`, etc.)
+
 ## Development
-This project is being developed incrementally. Each commit will add new features to the interpreter.
+This project is being developed incrementally. Each commit adds a discrete chunk of functionality.
