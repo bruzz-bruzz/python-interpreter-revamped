@@ -252,6 +252,24 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(expr.left, ast.Integer)
         self.assertIsInstance(expr.right, ast.ListLiteral)
 
+    def test_not_in_operator_parses(self):
+        # `3 not in [1, 2, 3]` should be a BinaryExpression with operator_value='not in'
+        program = parse("3 not in [1, 2, 3]")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator_value, "not in")
+        self.assertIsInstance(expr.left, ast.Integer)
+        self.assertIsInstance(expr.right, ast.ListLiteral)
+
+    def test_unary_not_still_works(self):
+        # `not` should still parse as UnaryExpression when not followed by `in`
+        program = parse("not True")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.UnaryExpression)
+        self.assertEqual(expr.operator_value, "not")
+
 
 if __name__ == "__main__":
     unittest.main()

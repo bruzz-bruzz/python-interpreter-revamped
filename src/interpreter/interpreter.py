@@ -134,17 +134,21 @@ class Interpreter:
                 return left
             return self.execute(node.right)
         # Membership operator: `x in container`
-        if node.operator == TokenType.KEYWORD and node.operator_value == 'in':
+        if node.operator == TokenType.KEYWORD and node.operator_value in ('in', 'not in'):
             left = self.execute(node.left)
             right = self.execute(node.right)
             if right is None:
-                return False
-            try:
-                return left in right
-            except TypeError:
-                raise RuntimeError(
-                    f"argument of type {type(right).__name__!r} is not iterable"
-                )
+                contained = False
+            else:
+                try:
+                    contained = left in right
+                except TypeError:
+                    raise RuntimeError(
+                        f"argument of type {type(right).__name__!r} is not iterable"
+                    )
+            if node.operator_value == 'not in':
+                return not contained
+            return contained
         # Identity: `x is y` is equivalent to `id(x) == id(y)` here, but we
         # approximate it as `x is y` via `x == y` for built-in types.
         if node.operator == TokenType.KEYWORD and node.operator_value == 'is':

@@ -324,6 +324,23 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "yes\n")
 
+    def test_not_in_list(self):
+        # `x not in [1, 2, 3]` is the opposite of `x in [1, 2, 3]`
+        src = (
+            "print(1 not in [1, 2, 3])\n"
+            "print(4 not in [1, 2, 3])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "False\nTrue\n")
+
+    def test_not_in_substring(self):
+        src = (
+            "print('ell' not in 'hello')\n"
+            "print('xyz' not in 'hello')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "False\nTrue\n")
+
 
 if __name__ == "__main__":
     unittest.main()

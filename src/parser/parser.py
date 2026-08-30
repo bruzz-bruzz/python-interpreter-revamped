@@ -67,9 +67,15 @@ class Parser:
         """Get the precedence of the current token, taking into account
         keyword operators like 'and' and 'or' that share the KEYWORD type."""
         tok = self.current_token
-        if tok.type == TokenType.KEYWORD and tok.value in (
-                'and', 'or', 'in', 'is'):
-            return self._keyword_precedence(tok.value)
+        if tok.type == TokenType.KEYWORD:
+            if tok.value in ('and', 'or', 'in', 'is'):
+                return self._keyword_precedence(tok.value)
+            if (tok.value == 'not'
+                    and self.pos + 1 < len(self.tokens)
+                    and self.tokens[self.pos + 1].type == TokenType.KEYWORD
+                    and self.tokens[self.pos + 1].value == 'in'):
+                # `not in` is a comparison-level operator
+                return 3
         return self.get_precedence(tok.type)
 
     def parse_expression(self, precedence: int = 0) -> Expression:
@@ -95,6 +101,16 @@ class Parser:
                 right = self.parse_expression(token_prec)
                 left = BinaryExpression(left, token.type, right,
                                         operator_value=token.value)
+            elif (token.type == TokenType.KEYWORD and token.value == 'not'
+                  and self.current_token.type == TokenType.KEYWORD
+                  and self.current_token.value == 'in'):
+                # `x not in container` - record operator_value='not in' on
+                # the BinaryExpression. We already consumed 'not' at the top
+                # of the loop, and 'in' is now the current token.
+                self.advance()  # consume 'in'
+                right = self.parse_expression(token_prec)
+                left = BinaryExpression(left, TokenType.KEYWORD, right,
+                                        operator_value='not in')
             elif token.type == TokenType.EQUAL:
                 # Right-associative assignment
                 right = self.parse_expression(token_prec - 1)

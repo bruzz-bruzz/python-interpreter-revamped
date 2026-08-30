@@ -22,7 +22,10 @@ revamped-interpreter/
 │   ├── hello.py
 │   ├── factorial.py
 │   ├── fizzbuzz.py
-│   └── sum.py
+│   ├── sum.py
+│   ├── primes.py
+│   ├── lists.py
+│   └── membership.py
 ├── src/
 │   ├── lexer/
 │   │   ├── __init__.py
@@ -52,10 +55,12 @@ revamped-interpreter/
 - **Pratt-style precedence parsing** for expressions with correct operator associativity
 - **Control flow**: `if/elif/else`, `while`, `for x in iterable:`, `return`
 - **Functions** with closures, recursion, and parameter binding
-- **Comparisons**: `==`, `!=`, `<`, `>`, `<=`, `>=`
-- **Logical operators**: `and`, `or` (short-circuit evaluation)
+- **Comparisons**: `==`, `!=`, `<`, `>`, `<=`, `>=`, `in`, `not in`, `is`
+- **Logical operators**: `and`, `or` (short-circuit evaluation), `not` (unary)
 - **Arithmetic**: `+`, `-`, `*`, `/` (true division), `//` (integer division), `%` (modulo)
 - **Augmented assignment**: `+=`, `-=`, `*=`, `/=`, `//=`, `%=`
+- **Lists**: `[1, 2, 3]` literals, indexing `xs[0]`, slicing/iteration
+- **String indexing**: `s[0]`, `s[-1]` (negative indices supported)
 - **Built-ins**: `print`, `len`, `range`, `str`, `int`, `float`, `type`
 - **Comments** starting with `#`
 - **REPL** with `>>> ` prompt
@@ -90,11 +95,12 @@ factorial of 7 is 5040
 ```
 
 ## Limitations (intentional, for educational scope)
-- No lists, dicts, or user-defined classes with attributes
+- No dicts, sets, or user-defined classes with attributes
 - No modules, packages, or `import` resolution
 - No `try/except`, `with`, comprehensions, lambdas, decorators
 - No string methods (`.upper()`, `.split()`, etc.)
-- No `not` unary operator yet
+- No list methods (`.append()`, `.pop()`, etc.) - lists work for indexing/iteration only
+- No slicing `s[a:b]` (only single-index `s[i]`)
 
 ## Development
 This project is being developed incrementally. Each commit adds a discrete chunk of functionality.
