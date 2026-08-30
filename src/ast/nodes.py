@@ -118,14 +118,22 @@ class BinaryExpression(Expression):
 
 
 class UnaryExpression(Expression):
-    """Unary operation (e.g., -x, not x)"""
+    """Unary operation (e.g., -x, not x)
 
-    def __init__(self, operator: TokenType, operand: Expression):
+    `operator` is a TokenType for normal operators. For the keyword
+    operator 'not', `operator` is set to TokenType.KEYWORD and
+    `operator_value` holds the string 'not'.
+    """
+
+    def __init__(self, operator: TokenType, operand: Expression,
+                 operator_value: Optional[str] = None):
         self.operator = operator
         self.operand = operand
+        self.operator_value = operator_value
 
     def __str__(self) -> str:
-        return f"UnaryOp({self.operator.value} {self.operand})"
+        op_name = self.operator_value or self.operator.value
+        return f"UnaryOp({op_name} {self.operand})"
 
 
 class AssignmentExpression(Expression):

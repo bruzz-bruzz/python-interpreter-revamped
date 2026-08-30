@@ -178,6 +178,33 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(expr.value, ast.BinaryExpression)
         self.assertEqual(expr.value.operator.value, "PLUS")
 
+    def test_parenthesized_expression(self):
+        # `(1 + 2) * 3` should be parseable and bind like normal
+        program = parse("(1 + 2) * 3")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        # Top is the multiplication
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator.value, "MULTIPLY")
+        # Left is a parenthesized binary expression
+        self.assertIsInstance(expr.left, ast.BinaryExpression)
+        self.assertEqual(expr.left.operator.value, "PLUS")
+
+    def test_unary_minus(self):
+        program = parse("-5")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.UnaryExpression)
+        self.assertEqual(expr.operator.value, "MINUS")
+
+    def test_not_operator(self):
+        program = parse("not True")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.UnaryExpression)
+        self.assertEqual(expr.operator_value, "not")
+        self.assertIsInstance(expr.operand, ast.Boolean)
+
 
 if __name__ == "__main__":
     unittest.main()

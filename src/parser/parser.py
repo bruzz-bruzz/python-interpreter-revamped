@@ -128,9 +128,29 @@ class Parser:
         return left
     
     def parse_primary(self) -> Expression:
-        """Parse a primary expression"""
+        """Parse a primary expression, including unary prefix operators."""
         token = self.current_token
-        
+
+        # Unary prefix operators: -, +, not
+        if token.type == TokenType.MINUS:
+            self.advance()
+            operand = self.parse_primary()
+            return UnaryExpression(TokenType.MINUS, operand)
+        if token.type == TokenType.PLUS:
+            self.advance()
+            operand = self.parse_primary()
+            return UnaryExpression(TokenType.PLUS, operand)
+        if (token.type == TokenType.KEYWORD and token.value == 'not'):
+            self.advance()
+            operand = self.parse_primary()
+            return UnaryExpression(TokenType.KEYWORD, operand,
+                                   operator_value='not')
+
+        if token.type == TokenType.LPAREN:
+            self.advance()  # consume '('
+            inner = self.parse_expression()
+            self.expect(TokenType.RPAREN)
+            return inner
         if token.type == TokenType.INTEGER:
             self.advance()
             return Integer(token.value)
@@ -153,7 +173,7 @@ class Parser:
             elif token.value == 'None':
                 self.advance()
                 return NoneLiteral()
-        
+
         raise SyntaxError(f"Unexpected token: {token.type} at line {token.line}")
     
     def parse_argument_list(self) -> List[Expression]:

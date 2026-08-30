@@ -181,6 +181,8 @@ class Interpreter:
             return -operand
         if op == TokenType.PLUS:
             return +operand
+        if op == TokenType.KEYWORD and node.operator_value == 'not':
+            return not self._is_truthy(operand)
         raise RuntimeError(f"Unsupported unary operator: {op.value}")
 
     # --- Function call ---

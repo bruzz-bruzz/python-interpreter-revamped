@@ -201,6 +201,38 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "15\n")
 
+    def test_unary_minus(self):
+        out, _ = run("x = -5\nprint(x)")
+        self.assertEqual(out, "-5\n")
+        out, _ = run("print(-(-3))")
+        self.assertEqual(out, "3\n")
+        out, _ = run("print(-(2 + 3))")
+        self.assertEqual(out, "-5\n")
+
+    def test_not_operator(self):
+        out, _ = run("print(not True)")
+        self.assertEqual(out, "False\n")
+        out, _ = run("print(not False)")
+        self.assertEqual(out, "True\n")
+        out, _ = run("print(not 0)")
+        self.assertEqual(out, "True\n")
+        out, _ = run("print(not 1)")
+        self.assertEqual(out, "False\n")
+        out, _ = run("print(not not True)")
+        self.assertEqual(out, "True\n")
+
+    def test_not_in_conditional(self):
+        # `not` is useful for inverting a condition
+        src = (
+            "x = 0\n"
+            "if not x:\n"
+            "    print('zero is falsy')\n"
+            "else:\n"
+            "    print('nonzero is truthy')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "zero is falsy\n")
+
 
 if __name__ == "__main__":
     unittest.main()
