@@ -67,7 +67,8 @@ class Parser:
         """Get the precedence of the current token, taking into account
         keyword operators like 'and' and 'or' that share the KEYWORD type."""
         tok = self.current_token
-        if tok.type == TokenType.KEYWORD and tok.value in ('and', 'or'):
+        if tok.type == TokenType.KEYWORD and tok.value in (
+                'and', 'or', 'in', 'is'):
             return self._keyword_precedence(tok.value)
         return self.get_precedence(tok.type)
 
@@ -88,9 +89,9 @@ class Parser:
                 right = self.parse_expression(token_prec)
                 left = BinaryExpression(left, token.type, right)
             elif (token.type == TokenType.KEYWORD
-                  and token.value in ('and', 'or')):
-                # Logical operator: store the keyword name on the AST node
-                # so the interpreter can dispatch on it.
+                  and token.value in ('and', 'or', 'in', 'is')):
+                # Logical / membership operator: store the keyword name on
+                # the AST node so the interpreter can dispatch on it.
                 right = self.parse_expression(token_prec)
                 left = BinaryExpression(left, token.type, right,
                                         operator_value=token.value)
@@ -241,12 +242,19 @@ class Parser:
         return precedence.get(token_type, 0)
 
     def _keyword_precedence(self, value: str) -> int:
-        """Precedence of keyword operators. 'or' binds looser than 'and',
-        and both bind looser than any arithmetic / comparison operator."""
+        """Precedence of keyword operators.
+
+        - 'or' binds loosest (lowest precedence)
+        - 'and' binds tighter than 'or'
+        - 'in', 'not in', 'is', 'is not' are comparisons (same as ==, <, etc.)
+        - 'not' is a unary prefix operator
+        """
         if value == 'or':
             return 1   # lowest
         if value == 'and':
             return 2
+        if value in ('in', 'not', 'is'):
+            return 3   # comparison-level
         return 0
 
     def advance(self) -> None:

@@ -242,6 +242,16 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(expr, ast.ListLiteral)
         self.assertEqual(len(expr.elements), 2)
 
+    def test_in_operator_parses(self):
+        # `3 in [1, 2, 3]` should be a BinaryExpression with operator_value='in'
+        program = parse("3 in [1, 2, 3]")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator_value, "in")
+        self.assertIsInstance(expr.left, ast.Integer)
+        self.assertIsInstance(expr.right, ast.ListLiteral)
+
 
 if __name__ == "__main__":
     unittest.main()

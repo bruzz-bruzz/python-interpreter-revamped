@@ -294,6 +294,36 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "15\n")
 
+    def test_in_list(self):
+        # `x in [1, 2, 3]` - membership test against a list
+        src = (
+            "print(1 in [1, 2, 3])\n"
+            "print(4 in [1, 2, 3])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "True\nFalse\n")
+
+    def test_in_string_substring(self):
+        # `s in t` - substring test against a string
+        src = (
+            "print('ell' in 'hello')\n"
+            "print('xyz' in 'hello')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "True\nFalse\n")
+
+    def test_in_used_in_conditional(self):
+        # `in` is most useful as a guard in an if
+        src = (
+            "fruits = ['apple', 'banana', 'cherry']\n"
+            "if 'banana' in fruits:\n"
+            "    print('yes')\n"
+            "else:\n"
+            "    print('no')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "yes\n")
+
 
 if __name__ == "__main__":
     unittest.main()

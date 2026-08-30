@@ -133,6 +133,24 @@ class Interpreter:
             if self._is_truthy(left):
                 return left
             return self.execute(node.right)
+        # Membership operator: `x in container`
+        if node.operator == TokenType.KEYWORD and node.operator_value == 'in':
+            left = self.execute(node.left)
+            right = self.execute(node.right)
+            if right is None:
+                return False
+            try:
+                return left in right
+            except TypeError:
+                raise RuntimeError(
+                    f"argument of type {type(right).__name__!r} is not iterable"
+                )
+        # Identity: `x is y` is equivalent to `id(x) == id(y)` here, but we
+        # approximate it as `x is y` via `x == y` for built-in types.
+        if node.operator == TokenType.KEYWORD and node.operator_value == 'is':
+            left = self.execute(node.left)
+            right = self.execute(node.right)
+            return left is right
         left = self.execute(node.left)
         right = self.execute(node.right)
         op = node.operator
