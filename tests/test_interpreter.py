@@ -127,6 +127,51 @@ class InterpreterTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             run("x = 5 // 0\n")
 
+    def test_logical_and_truthy(self):
+        # `True and 1` should evaluate to 1
+        out, _ = run("print(True and 1)")
+        self.assertEqual(out, "1\n")
+        # `False and 1` should short-circuit and return False
+        out, _ = run("print(False and 1)")
+        self.assertEqual(out, "False\n")
+
+    def test_logical_or_short_circuit(self):
+        # `True or 1` should short-circuit to True
+        out, _ = run("print(True or 1)")
+        self.assertEqual(out, "True\n")
+        # `False or 2` should evaluate the right side
+        out, _ = run("print(False or 2)")
+        self.assertEqual(out, "2\n")
+
+    def test_elif_chain_picks_correct_branch(self):
+        src = (
+            "x = 5\n"
+            "if x > 10:\n"
+            "    print('big')\n"
+            "elif x > 3:\n"
+            "    print('medium')\n"
+            "else:\n"
+            "    print('small')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "medium\n")
+
+    def test_elif_with_and(self):
+        # Multi-condition elif using 'and' / 'or'
+        src = (
+            "x = 6\n"
+            "if x > 100:\n"
+            "    print('huge')\n"
+            "elif x % 2 == 0 and x % 3 == 0:\n"
+            "    print('div6')\n"
+            "elif x % 2 == 0:\n"
+            "    print('even')\n"
+            "else:\n"
+            "    print('odd')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "div6\n")
+
 
 if __name__ == "__main__":
     unittest.main()

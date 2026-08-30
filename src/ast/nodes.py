@@ -98,15 +98,23 @@ class Variable(Expression):
 # === Binary and Unary Expressions ===
 
 class BinaryExpression(Expression):
-    """Binary operation (e.g., a + b)"""
+    """Binary operation (e.g., a + b)
 
-    def __init__(self, left: Expression, operator: TokenType, right: Expression):
+    `operator` is a TokenType for normal operators. For the logical
+    keyword operators 'and' / 'or', `operator` is set to TokenType.KEYWORD
+    and `operator_value` holds the actual keyword string ('and' or 'or').
+    """
+
+    def __init__(self, left: Expression, operator: TokenType, right: Expression,
+                 operator_value: Optional[str] = None):
         self.left = left
         self.operator = operator
         self.right = right
+        self.operator_value = operator_value
 
     def __str__(self) -> str:
-        return f"BinaryOp({self.left} {self.operator.value} {self.right})"
+        op_name = self.operator_value or self.operator.value
+        return f"BinaryOp({self.left} {op_name} {self.right})"
 
 
 class UnaryExpression(Expression):

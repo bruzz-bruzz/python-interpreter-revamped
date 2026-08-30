@@ -63,13 +63,21 @@ class Parser:
         node = self.parse_expression()
         return ExpressionStatement(node)
 
+    def _current_precedence(self) -> int:
+        """Get the precedence of the current token, taking into account
+        keyword operators like 'and' and 'or' that share the KEYWORD type."""
+        tok = self.current_token
+        if tok.type == TokenType.KEYWORD and tok.value in ('and', 'or'):
+            return self._keyword_precedence(tok.value)
+        return self.get_precedence(tok.type)
+
     def parse_expression(self, precedence: int = 0) -> Expression:
         """Parse an expression using Pratt-style precedence climbing."""
         left = self.parse_primary()
         while (self.current_token.type != TokenType.EOF
-               and self.get_precedence(self.current_token.type) > precedence):
+               and self._current_precedence() > precedence):
             token = self.current_token
-            token_prec = self.get_precedence(token.type)
+            token_prec = self._current_precedence()
             self.advance()
             if token.type in (TokenType.PLUS, TokenType.MINUS,
                               TokenType.MULTIPLY, TokenType.DIVIDE,
@@ -79,6 +87,13 @@ class Parser:
                               TokenType.EQUAL_EQUAL, TokenType.NOT_EQUAL):
                 right = self.parse_expression(token_prec)
                 left = BinaryExpression(left, token.type, right)
+            elif (token.type == TokenType.KEYWORD
+                  and token.value in ('and', 'or')):
+                # Logical operator: store the keyword name on the AST node
+                # so the interpreter can dispatch on it.
+                right = self.parse_expression(token_prec)
+                left = BinaryExpression(left, token.type, right,
+                                        operator_value=token.value)
             elif token.type == TokenType.EQUAL:
                 # Right-associative assignment
                 right = self.parse_expression(token_prec - 1)
@@ -132,24 +147,39 @@ class Parser:
         return args
     
     def get_precedence(self, token_type: TokenType) -> int:
-        """Get precedence of an operator. Higher number = tighter binding."""
+        """Get precedence of an operator. Higher number = tighter binding.
+
+        For keyword operators like 'and' / 'or' the caller must look at the
+        token's *value* since multiple keywords share the TokenType.KEYWORD
+        type. We return a sentinel precedence (0) for KEYWORD here and let
+        the caller inspect the value.
+        """
         precedence = {
             TokenType.EQUAL: 1,           # lowest (assignment, right-assoc)
-            TokenType.EQUAL_EQUAL: 2,
-            TokenType.NOT_EQUAL: 2,
-            TokenType.LESS: 2,
-            TokenType.GREATER: 2,
-            TokenType.LESS_EQUAL: 2,
-            TokenType.GREATER_EQUAL: 2,
-            TokenType.PLUS: 3,
-            TokenType.MINUS: 3,
-            TokenType.MULTIPLY: 4,
-            TokenType.DIVIDE: 4,
-            TokenType.INTEGER_DIVIDE: 4,
-            TokenType.MODULO: 4,
+            TokenType.EQUAL_EQUAL: 3,     # comparisons
+            TokenType.NOT_EQUAL: 3,
+            TokenType.LESS: 3,
+            TokenType.GREATER: 3,
+            TokenType.LESS_EQUAL: 3,
+            TokenType.GREATER_EQUAL: 3,
+            TokenType.PLUS: 4,            # additive
+            TokenType.MINUS: 4,
+            TokenType.MULTIPLY: 5,        # multiplicative
+            TokenType.DIVIDE: 5,
+            TokenType.INTEGER_DIVIDE: 5,
+            TokenType.MODULO: 5,
             TokenType.LPAREN: 10,         # function call (postfix)
         }
         return precedence.get(token_type, 0)
+
+    def _keyword_precedence(self, value: str) -> int:
+        """Precedence of keyword operators. 'or' binds looser than 'and',
+        and both bind looser than any arithmetic / comparison operator."""
+        if value == 'or':
+            return 1   # lowest
+        if value == 'and':
+            return 2
+        return 0
 
     def advance(self) -> None:
         """Advance to the next token"""
@@ -221,18 +251,44 @@ class Parser:
         return params
 
     def parse_if_statement(self) -> IfStatement:
-        """Parse an if statement: if condition: body [else: body]"""
+        """Parse an if statement with optional elif/else chain.
+
+        Shape of the AST for `if c1: b1 elif c2: b2 elif c3: b3 else: b4`:
+            IfStatement(c1, b1, else_body=[
+                IfStatement(c2, b2, else_body=[
+                    IfStatement(c3, b3, else_body=b4)
+                ])
+            ])
+        """
         # 'if' keyword already consumed
         condition = self.parse_expression()
         self.expect(TokenType.COLON)
         body = self.parse_block()
-        else_body = None
-        if (self.current_token.type == TokenType.KEYWORD
-                and self.current_token.value in ('else', 'elif')):
-            self.advance()  # consume 'else' or 'elif'
-            self.expect(TokenType.COLON)
-            else_body = self.parse_block()
-        return IfStatement(condition, body, else_body)
+
+        # Build the elif chain. We start with the outer IfStatement and
+        # link each new 'elif' as a nested IfStatement inside the previous
+        # one's else_body. A final 'else' attaches as the else_body of the
+        # last IfStatement in the chain.
+        outer = IfStatement(condition, body, None)
+        current = outer
+        while (self.current_token.type == TokenType.KEYWORD
+                and self.current_token.value in ('elif', 'else')):
+            if self.current_token.value == 'elif':
+                self.advance()  # consume 'elif'
+                elif_condition = self.parse_expression()
+                self.expect(TokenType.COLON)
+                elif_body = self.parse_block()
+                new_if = IfStatement(elif_condition, elif_body, None)
+                current.else_body = [new_if]
+                current = new_if
+            else:
+                # 'else' clause - no condition
+                self.advance()  # consume 'else'
+                self.expect(TokenType.COLON)
+                current.else_body = self.parse_block()
+                # Chain ends here
+                break
+        return outer
 
     def parse_for_statement(self) -> ForStatement:
         """Parse a for loop: for target in iterable: body"""

@@ -118,6 +118,55 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(expr.right, ast.BinaryExpression)
         self.assertEqual(expr.right.operator.value, "MODULO")
 
+    def test_and_or_in_expression(self):
+        # `a and b` and `a or b` should parse as BinaryExpression with KEYWORD type
+        # and the actual keyword stored in operator_value
+        program = parse("a and b")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator_value, "and")
+
+        program = parse("a or b")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator_value, "or")
+
+    def test_and_binds_tighter_than_or(self):
+        # `a or b and c` should be `a or (b and c)` (and binds tighter)
+        program = parse("a or b and c")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        # Top is 'or'
+        self.assertEqual(expr.operator_value, "or")
+        # Right is 'and'
+        self.assertIsInstance(expr.right, ast.BinaryExpression)
+        self.assertEqual(expr.right.operator_value, "and")
+
+    def test_comparison_binds_tighter_than_and(self):
+        # `a > 1 and b > 2` should be `(a > 1) and (b > 2)` (comparison tighter)
+        program = parse("a > 1 and b > 2")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        # Top is 'and'
+        self.assertEqual(expr.operator_value, "and")
+        # Both sides are comparisons
+        self.assertEqual(expr.left.operator.value, "GREATER")
+        self.assertEqual(expr.right.operator.value, "GREATER")
+
+    def test_elif_chains_parse_to_nested_if(self):
+        # An if/elif/else chain should parse to nested IfStatements
+        program = parse("if a:\n    x = 1\nelif b:\n    x = 2\nelse:\n    x = 3\n")
+        stmt = program.statements[0]
+        self.assertIsInstance(stmt, ast.IfStatement)
+        # elif becomes a nested IfStatement in else_body
+        self.assertIsNotNone(stmt.else_body)
+        self.assertEqual(len(stmt.else_body), 1)
+        self.assertIsInstance(stmt.else_body[0], ast.IfStatement)
+        # else becomes the inner IfStatement's else_body
+        self.assertIsNotNone(stmt.else_body[0].else_body)
+
 
 if __name__ == "__main__":
     unittest.main()

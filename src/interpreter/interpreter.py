@@ -121,6 +121,18 @@ class Interpreter:
 
     # --- Binary / Unary ---
     def visit_BinaryExpression(self, node: ast.BinaryExpression) -> Any:
+        # Short-circuit logical operators: evaluate left first, only evaluate right
+        # if the result depends on it.
+        if node.operator == TokenType.KEYWORD and node.operator_value in ('and', 'or'):
+            left = self.execute(node.left)
+            if node.operator_value == 'and':
+                if not self._is_truthy(left):
+                    return left
+                return self.execute(node.right)
+            # 'or'
+            if self._is_truthy(left):
+                return left
+            return self.execute(node.right)
         left = self.execute(node.left)
         right = self.execute(node.right)
         op = node.operator
