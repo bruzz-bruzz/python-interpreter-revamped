@@ -233,6 +233,23 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "zero is falsy\n")
 
+    def test_string_subscript(self):
+        out, _ = run('s = "hello"\nprint(s[0])\nprint(s[1])\nprint(s[4])')
+        self.assertEqual(out, "h\ne\no\n")
+
+    def test_string_negative_subscript(self):
+        out, _ = run('s = "hello"\nprint(s[-1])\nprint(s[-2])')
+        self.assertEqual(out, "o\nl\n")
+
+    def test_string_slice_via_index_expression(self):
+        # Concatenating a few characters using indexing
+        out, _ = run('s = "hello"\nprint(s[0] + s[1] + s[2])')
+        self.assertEqual(out, "hel\n")
+
+    def test_subscript_out_of_range_raises(self):
+        with self.assertRaises(IndexError):
+            run('s = "hi"\nprint(s[5])')
+
 
 if __name__ == "__main__":
     unittest.main()

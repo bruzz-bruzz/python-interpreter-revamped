@@ -174,6 +174,36 @@ class Interpreter:
             raise RuntimeError(f"Type error in binary op {op.value}: {exc}")
         raise RuntimeError(f"Unsupported binary operator: {op.value}")
 
+    def visit_SubscriptExpression(self, node: ast.SubscriptExpression) -> Any:
+        target = self.execute(node.target)
+        index = self.execute(node.index)
+        # Strings support indexing
+        if isinstance(target, str):
+            if not isinstance(index, int):
+                raise TypeError(
+                    f"String indices must be integers, not {type(index).__name__}"
+                )
+            # Support negative indices
+            if index < 0:
+                index += len(target)
+            if index < 0 or index >= len(target):
+                raise IndexError(f"string index out of range: {index}")
+            return target[index]
+        # Lists support indexing
+        if isinstance(target, list):
+            if not isinstance(index, int):
+                raise TypeError(
+                    f"List indices must be integers, not {type(index).__name__}"
+                )
+            if index < 0:
+                index += len(target)
+            if index < 0 or index >= len(target):
+                raise IndexError(f"list index out of range: {index}")
+            return target[index]
+        raise TypeError(
+            f"'{type(target).__name__}' object is not subscriptable"
+        )
+
     def visit_UnaryExpression(self, node: ast.UnaryExpression) -> Any:
         operand = self.execute(node.operand)
         op = node.operator

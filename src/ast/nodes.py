@@ -173,6 +173,17 @@ class FunctionCall(Expression):
         return f"Call({self.function}({args_str}))"
 
 
+class SubscriptExpression(Expression):
+    """Subscript / indexing expression (e.g., arr[0], s[1])"""
+
+    def __init__(self, target: Expression, index: Expression):
+        self.target = target
+        self.index = index
+
+    def __str__(self) -> str:
+        return f"Subscript({self.target}[{self.index}])"
+
+
 # === Statements ===
 
 class ExpressionStatement(Statement):

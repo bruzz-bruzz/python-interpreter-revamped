@@ -205,6 +205,17 @@ class ParserTests(unittest.TestCase):
         self.assertEqual(expr.operator_value, "not")
         self.assertIsInstance(expr.operand, ast.Boolean)
 
+    def test_subscript_expression(self):
+        # `s[0]` should parse as a SubscriptExpression
+        program = parse("s[0]")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.SubscriptExpression)
+        self.assertIsInstance(expr.target, ast.Variable)
+        self.assertEqual(expr.target.name, "s")
+        self.assertIsInstance(expr.index, ast.Integer)
+        self.assertEqual(expr.index.value, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

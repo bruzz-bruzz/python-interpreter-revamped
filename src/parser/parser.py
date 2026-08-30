@@ -125,6 +125,11 @@ class Parser:
                 # Function call (highest precedence, left-associative)
                 args = self.parse_argument_list()
                 left = FunctionCall(left, args)
+            elif token.type == TokenType.LBRACKET:
+                # Subscript (indexing) - high precedence, left-associative
+                index_expr = self.parse_expression()
+                self.expect(TokenType.RBRACKET)
+                left = SubscriptExpression(left, index_expr)
         return left
     
     def parse_primary(self) -> Expression:
@@ -218,6 +223,7 @@ class Parser:
             TokenType.INTEGER_DIVIDE: 5,
             TokenType.MODULO: 5,
             TokenType.LPAREN: 10,         # function call (postfix)
+            TokenType.LBRACKET: 10,       # subscript / indexing (postfix)
         }
         return precedence.get(token_type, 0)
 
