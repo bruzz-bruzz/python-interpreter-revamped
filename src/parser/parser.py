@@ -73,6 +73,7 @@ class Parser:
             self.advance()
             if token.type in (TokenType.PLUS, TokenType.MINUS,
                               TokenType.MULTIPLY, TokenType.DIVIDE,
+                              TokenType.INTEGER_DIVIDE, TokenType.MODULO,
                               TokenType.LESS, TokenType.GREATER,
                               TokenType.LESS_EQUAL, TokenType.GREATER_EQUAL,
                               TokenType.EQUAL_EQUAL, TokenType.NOT_EQUAL):
@@ -144,6 +145,8 @@ class Parser:
             TokenType.MINUS: 3,
             TokenType.MULTIPLY: 4,
             TokenType.DIVIDE: 4,
+            TokenType.INTEGER_DIVIDE: 4,
+            TokenType.MODULO: 4,
             TokenType.LPAREN: 10,         # function call (postfix)
         }
         return precedence.get(token_type, 0)

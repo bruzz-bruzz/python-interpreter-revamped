@@ -137,6 +137,15 @@ class Interpreter:
                 if right == 0:
                     raise RuntimeError("Division by zero")
                 return left / right
+            if op == TokenType.INTEGER_DIVIDE:
+                if right == 0:
+                    raise RuntimeError("Division by zero")
+                # Python's // already handles int/float properly
+                return left // right
+            if op == TokenType.MODULO:
+                if right == 0:
+                    raise RuntimeError("Modulo by zero")
+                return left % right
             if op == TokenType.EQUAL_EQUAL:
                 return left == right
             if op == TokenType.NOT_EQUAL:

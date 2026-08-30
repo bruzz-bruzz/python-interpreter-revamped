@@ -64,6 +64,32 @@ class LexerTests(unittest.TestCase):
             any(t.type == TokenType.IDENTIFIER and t.value == "x" for t in tokens)
         )
 
+    def test_modulo_operator(self):
+        # `%` is a single MODULO token
+        tokens = lex("5 % 3")
+        self.assertEqual(tokens[0].type, TokenType.INTEGER)
+        self.assertEqual(tokens[1].type, TokenType.MODULO)
+        self.assertEqual(tokens[1].value, "%")
+        self.assertEqual(tokens[2].type, TokenType.INTEGER)
+
+    def test_integer_division_operator(self):
+        # `//` must be tokenized as a single INTEGER_DIVIDE (not two DIVIDEs)
+        tokens = lex("7 // 2")
+        self.assertEqual(tokens[0].type, TokenType.INTEGER)
+        self.assertEqual(tokens[1].type, TokenType.INTEGER_DIVIDE)
+        self.assertEqual(tokens[1].value, "//")
+        self.assertEqual(tokens[2].type, TokenType.INTEGER)
+        # No stray DIVIDE tokens
+        self.assertNotIn(TokenType.DIVIDE, [t.type for t in tokens])
+
+    def test_divide_and_modulo_distinct(self):
+        # `/` and `//` and `%` should all be distinct tokens
+        tokens = lex("/ // %")
+        types = [t.type for t in tokens if t.type != TokenType.EOF]
+        self.assertEqual(
+            types, [TokenType.DIVIDE, TokenType.INTEGER_DIVIDE, TokenType.MODULO]
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

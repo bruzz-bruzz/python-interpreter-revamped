@@ -82,6 +82,42 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(inner, ast.FunctionCall)
         self.assertEqual(inner.function.name, "add")
 
+    def test_modulo_expression(self):
+        # `5 % 3` should parse as a single BinaryExpression with MODULO operator
+        program = parse("5 % 3")
+        stmt = program.statements[0]
+        self.assertIsInstance(stmt, ast.ExpressionStatement)
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator.value, "MODULO")
+        self.assertIsInstance(expr.left, ast.Integer)
+        self.assertEqual(expr.left.value, 5)
+        self.assertIsInstance(expr.right, ast.Integer)
+        self.assertEqual(expr.right.value, 3)
+
+    def test_integer_division_expression(self):
+        # `7 // 2` should parse as a single BinaryExpression with INTEGER_DIVIDE operator
+        program = parse("7 // 2")
+        stmt = program.statements[0]
+        self.assertIsInstance(stmt, ast.ExpressionStatement)
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertEqual(expr.operator.value, "INTEGER_DIVIDE")
+        self.assertEqual(expr.left.value, 7)
+        self.assertEqual(expr.right.value, 2)
+
+    def test_modulo_precedence_tighter_than_addition(self):
+        # `1 + 5 % 3` should be parsed as `1 + (5 % 3)` (modulo binds tighter)
+        program = parse("1 + 5 % 3")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        # Top-level is PLUS
+        self.assertEqual(expr.operator.value, "PLUS")
+        # Right child is the MODULO
+        self.assertIsInstance(expr.right, ast.BinaryExpression)
+        self.assertEqual(expr.right.operator.value, "MODULO")
+
 
 if __name__ == "__main__":
     unittest.main()

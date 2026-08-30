@@ -19,6 +19,8 @@ class TokenType(Enum):
     MINUS = "MINUS"
     MULTIPLY = "MULTIPLY"
     DIVIDE = "DIVIDE"
+    INTEGER_DIVIDE = "INTEGER_DIVIDE"
+    MODULO = "MODULO"
     EQUAL = "EQUAL"
     EQUAL_EQUAL = "EQUAL_EQUAL"
     NOT_EQUAL = "NOT_EQUAL"
@@ -87,7 +89,9 @@ class Lexer:
         ('PLUS', r'\+'),
         ('MINUS', r'-'),
         ('MULTIPLY', r'\*'),
+        ('INTEGER_DIVIDE', r'//'),
         ('DIVIDE', r'/'),
+        ('MODULO', r'%'),
         ('EQUAL', r'='),
         ('LESS', r'<'),
         ('GREATER', r'>'),

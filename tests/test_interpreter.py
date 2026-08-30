@@ -86,6 +86,47 @@ class InterpreterTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             run("x = 1 / 0\n")
 
+    def test_modulo_operator(self):
+        # Modulo on integers
+        out, _ = run("print(5 % 3)")
+        self.assertEqual(out, "2\n")
+        out, _ = run("print(10 % 4)")
+        self.assertEqual(out, "2\n")
+        out, _ = run("print(7 % 7)")
+        self.assertEqual(out, "0\n")
+
+    def test_integer_division_operator(self):
+        # Integer (floor) division on integers
+        out, _ = run("print(7 // 2)")
+        self.assertEqual(out, "3\n")
+        out, _ = run("print(10 // 3)")
+        self.assertEqual(out, "3\n")
+        out, _ = run("print(8 // 2)")
+        self.assertEqual(out, "4\n")
+
+    def test_modulo_in_conditional(self):
+        # Classic FizzBuzz-style check: a number is even if `n % 2 == 0`
+        src = (
+            "for i in range(1, 7):\n"
+            "    if i % 2 == 0:\n"
+            "        print(i, 'even')\n"
+            "    else:\n"
+            "        print(i, 'odd')\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(
+            out,
+            "1 odd\n2 even\n3 odd\n4 even\n5 odd\n6 even\n",
+        )
+
+    def test_modulo_by_zero_raises(self):
+        with self.assertRaises(RuntimeError):
+            run("x = 5 % 0\n")
+
+    def test_integer_division_by_zero_raises(self):
+        with self.assertRaises(RuntimeError):
+            run("x = 5 // 0\n")
+
 
 if __name__ == "__main__":
     unittest.main()
