@@ -50,10 +50,12 @@ revamped-interpreter/
 ## Features
 - **Lexical analysis** with proper ordering of multi-character operators (`==`, `<=`, `>=`, `!=`) and INDENT/DEDENT token emission
 - **Pratt-style precedence parsing** for expressions with correct operator associativity
-- **Control flow**: `if/else`, `while`, `for x in iterable:`, `return`
+- **Control flow**: `if/elif/else`, `while`, `for x in iterable:`, `return`
 - **Functions** with closures, recursion, and parameter binding
 - **Comparisons**: `==`, `!=`, `<`, `>`, `<=`, `>=`
+- **Logical operators**: `and`, `or` (short-circuit evaluation)
 - **Arithmetic**: `+`, `-`, `*`, `/` (true division), `//` (integer division), `%` (modulo)
+- **Augmented assignment**: `+=`, `-=`, `*=`, `/=`, `//=`, `%=`
 - **Built-ins**: `print`, `len`, `range`, `str`, `int`, `float`, `type`
 - **Comments** starting with `#`
 - **REPL** with `>>> ` prompt
@@ -91,8 +93,8 @@ factorial of 7 is 5040
 - No lists, dicts, or user-defined classes with attributes
 - No modules, packages, or `import` resolution
 - No `try/except`, `with`, comprehensions, lambdas, decorators
-- No `elif` chains (only `if`/`else` with nesting)
-- No augmented assignment (`+=`, `-=`, etc.)
+- No string methods (`.upper()`, `.split()`, etc.)
+- No `not` unary operator yet
 
 ## Development
 This project is being developed incrementally. Each commit adds a discrete chunk of functionality.
