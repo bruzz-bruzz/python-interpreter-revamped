@@ -244,6 +244,87 @@ class Interpreter:
             f"'{type(target).__name__}' object is not subscriptable"
         )
 
+    def visit_AttributeAccess(self, node: ast.AttributeAccess) -> Any:
+        # We support attribute access on strings (read-only), lists
+        # (read-only) and user-defined objects (see ClassDefinition).
+        target = self.execute(node.target)
+        attr = node.attribute
+        if isinstance(target, str):
+            return self._str_attr(target, attr)
+        if isinstance(target, list):
+            return self._list_attr(target, attr)
+        if isinstance(target, dict) and target.get("__name__"):
+            # class object: look up method
+            return target[attr]
+        raise AttributeError(
+            f"'{type(target).__name__}' object has no attribute {attr!r}"
+        )
+
+    def visit_MethodCall(self, node: ast.MethodCall) -> Any:
+        # Method call: target.method(args)
+        target = self.execute(node.target)
+        method_name = node.method
+        args = [self.execute(arg) for arg in node.arguments]
+        if isinstance(target, str):
+            return self._str_method(target, method_name, args)
+        if isinstance(target, list):
+            return self._list_method(target, method_name, args)
+        if isinstance(target, dict) and target.get("__name__"):
+            method = target.get(method_name)
+            if not callable(method):
+                raise TypeError(
+                    f"object of type {target['__name__']!r} has no callable "
+                    f"method {method_name!r}"
+                )
+            return method(*args)
+        raise AttributeError(
+            f"'{type(target).__name__}' object has no method {method_name!r}"
+        )
+
+    # ---- string attribute / method dispatch ----
+    def _str_attr(self, value: str, attr: str) -> Any:
+        # Most string "attributes" are actually methods, so just return
+        # the bound method (which is callable). This makes `s.upper` and
+        # `s.upper()` both work consistently.
+        method = getattr(value, attr, None)
+        if method is None:
+            raise AttributeError(
+                f"'str' object has no attribute {attr!r}"
+            )
+        return method
+
+    def _str_method(self, value: str, method_name: str, args: list) -> Any:
+        method = getattr(value, method_name, None)
+        if method is None or not callable(method):
+            raise AttributeError(
+                f"'str' object has no method {method_name!r}"
+            )
+        try:
+            return method(*args)
+        except TypeError as e:
+            # Re-raise with a clearer message
+            raise RuntimeError(f"str.{method_name}(): {e}")
+
+    # ---- list attribute / method dispatch ----
+    def _list_attr(self, value: list, attr: str) -> Any:
+        method = getattr(value, attr, None)
+        if method is None:
+            raise AttributeError(
+                f"'list' object has no attribute {attr!r}"
+            )
+        return method
+
+    def _list_method(self, value: list, method_name: str, args: list) -> Any:
+        method = getattr(value, method_name, None)
+        if method is None or not callable(method):
+            raise AttributeError(
+                f"'list' object has no method {method_name!r}"
+            )
+        try:
+            return method(*args)
+        except TypeError as e:
+            raise RuntimeError(f"list.{method_name}(): {e}")
+
     def visit_UnaryExpression(self, node: ast.UnaryExpression) -> Any:
         operand = self.execute(node.operand)
         op = node.operator

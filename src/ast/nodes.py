@@ -184,6 +184,35 @@ class SubscriptExpression(Expression):
         return f"Subscript({self.target}[{self.index}])"
 
 
+class AttributeAccess(Expression):
+    """Attribute access expression (e.g., obj.attr, s.upper).
+
+    This represents a method/property reference on an object. When followed
+    by `(...)` it is invoked as a method call (see MethodCall).
+    """
+
+    def __init__(self, target: Expression, attribute: str):
+        self.target = target
+        self.attribute = attribute
+
+    def __str__(self) -> str:
+        return f"Attr({self.target}.{self.attribute})"
+
+
+class MethodCall(Expression):
+    """Method call expression (e.g., s.upper(), "a,b".split(","))"""
+
+    def __init__(self, target: Expression, method: str,
+                 arguments: List[Expression]):
+        self.target = target
+        self.method = method
+        self.arguments = arguments
+
+    def __str__(self) -> str:
+        args_str = ", ".join(str(a) for a in self.arguments)
+        return f"MethodCall({self.target}.{self.method}({args_str}))"
+
+
 class ListLiteral(Expression):
     """List literal expression (e.g., [1, 2, 3])"""
 

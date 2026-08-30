@@ -295,6 +295,41 @@ class ParserTests(unittest.TestCase):
         break_stmt = if_stmt.body[0]
         self.assertIsInstance(break_stmt, ast.BreakStatement)
 
+    def test_method_call_parses(self):
+        # `s.upper()` should be a MethodCall on a String
+        program = parse('"hello".upper()')
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.MethodCall)
+        self.assertEqual(expr.method, "upper")
+        self.assertIsInstance(expr.target, ast.String)
+
+    def test_method_call_with_args(self):
+        program = parse('"a,b,c".split(",")')
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.MethodCall)
+        self.assertEqual(expr.method, "split")
+        self.assertEqual(len(expr.arguments), 1)
+
+    def test_chained_method_calls(self):
+        # `"a".upper().lower()` should be a nested MethodCall
+        program = parse('"a".upper().lower()')
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.MethodCall)
+        self.assertEqual(expr.method, "lower")
+        self.assertIsInstance(expr.target, ast.MethodCall)
+        self.assertEqual(expr.target.method, "upper")
+
+    def test_method_call_in_expression(self):
+        # `"a".upper() + "b"` should parse as a BinaryExpression
+        program = parse('"a".upper() + "b"')
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.BinaryExpression)
+        self.assertIsInstance(expr.left, ast.MethodCall)
+
 
 if __name__ == "__main__":
     unittest.main()

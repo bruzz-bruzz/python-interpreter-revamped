@@ -423,6 +423,80 @@ class InterpreterTests(unittest.TestCase):
         # (0,0), (1,0), (2,0) on separate lines.
         self.assertEqual(out, "0 0\n1 0\n2 0\n")
 
+    def test_string_upper(self):
+        src = 'print("hello".upper())'
+        out, _ = run(src)
+        self.assertEqual(out, "HELLO\n")
+
+    def test_string_lower(self):
+        src = 'print("HELLO".lower())'
+        out, _ = run(src)
+        self.assertEqual(out, "hello\n")
+
+    def test_string_strip(self):
+        src = 'print("  hello  ".strip())'
+        out, _ = run(src)
+        self.assertEqual(out, "hello\n")
+
+    def test_string_split(self):
+        src = 'print("a,b,c".split(","))'
+        out, _ = run(src)
+        # Lists print via Python's print of list, which is [a, b, c]
+        self.assertEqual(out, "['a', 'b', 'c']\n")
+
+    def test_string_replace(self):
+        src = 'print("hello".replace("l", "L"))'
+        out, _ = run(src)
+        self.assertEqual(out, "heLLo\n")
+
+    def test_string_startswith(self):
+        src = 'print("hello".startswith("he"))\nprint("hello".startswith("lo"))'
+        out, _ = run(src)
+        self.assertEqual(out, "True\nFalse\n")
+
+    def test_string_endswith(self):
+        src = 'print("hello".endswith("lo"))\nprint("hello".endswith("he"))'
+        out, _ = run(src)
+        self.assertEqual(out, "True\nFalse\n")
+
+    def test_chained_string_methods(self):
+        src = 'print("  HELLO  ".strip().lower())'
+        out, _ = run(src)
+        self.assertEqual(out, "hello\n")
+
+    def test_method_call_with_string_variable(self):
+        src = (
+            "s = 'hello'\n"
+            "print(s.upper())\n"
+            "print(s.lower())\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "HELLO\nhello\n")
+
+    def test_unknown_string_method_raises(self):
+        with self.assertRaises(Exception):
+            run('"hello".nonexistent()')
+
+    def test_list_append(self):
+        # list.append mutates the list in place
+        src = (
+            "xs = [1, 2, 3]\n"
+            "xs.append(4)\n"
+            "print(xs)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "[1, 2, 3, 4]\n")
+
+    def test_list_pop(self):
+        src = (
+            "xs = [1, 2, 3]\n"
+            "x = xs.pop()\n"
+            "print(x)\n"
+            "print(xs)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "3\n[1, 2]\n")
+
 
 if __name__ == "__main__":
     unittest.main()

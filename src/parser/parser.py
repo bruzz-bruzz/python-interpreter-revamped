@@ -91,7 +91,14 @@ class Parser:
                and self._current_precedence() > precedence):
             token = self.current_token
             token_prec = self._current_precedence()
-            self.advance()
+            # Postfix operators (LPAREN, LBRACKET, DOT) must not advance
+            # here: they have their own argument parsing logic below that
+            # needs the operator token as a sentinel. For infix/prefix
+            # operators we advance to consume the operator first.
+            is_postfix = token.type in (
+                TokenType.LPAREN, TokenType.LBRACKET, TokenType.DOT)
+            if not is_postfix:
+                self.advance()
             if token.type in (TokenType.PLUS, TokenType.MINUS,
                               TokenType.MULTIPLY, TokenType.DIVIDE,
                               TokenType.INTEGER_DIVIDE, TokenType.MODULO,
@@ -146,13 +153,33 @@ class Parser:
                 left = AssignmentExpression(left, new_value)
             elif token.type == TokenType.LPAREN:
                 # Function call (highest precedence, left-associative)
+                self.advance()  # consume '('
                 args = self.parse_argument_list()
                 left = FunctionCall(left, args)
             elif token.type == TokenType.LBRACKET:
                 # Subscript (indexing) - high precedence, left-associative
+                self.advance()  # consume '['
                 index_expr = self.parse_expression()
                 self.expect(TokenType.RBRACKET)
                 left = SubscriptExpression(left, index_expr)
+            elif token.type == TokenType.DOT:
+                # Attribute / method access (postfix)
+                self.advance()  # consume '.'
+                if self.current_token.type != TokenType.IDENTIFIER:
+                    raise SyntaxError(
+                        f"Expected attribute name after '.' at line "
+                        f"{self.current_token.line}"
+                    )
+                attr = self.current_token.value
+                self.advance()
+                if self.current_token.type == TokenType.LPAREN:
+                    # Method call: obj.method(args)
+                    self.advance()  # consume '('
+                    args = self.parse_argument_list()
+                    left = MethodCall(left, attr, args)
+                else:
+                    # Plain attribute access: obj.attr
+                    left = AttributeAccess(left, attr)
         return left
     
     def parse_primary(self) -> Expression:
@@ -260,6 +287,7 @@ class Parser:
             TokenType.MODULO: 5,
             TokenType.LPAREN: 10,         # function call (postfix)
             TokenType.LBRACKET: 10,       # subscript / indexing (postfix)
+            TokenType.DOT: 10,            # attribute/method access (postfix)
         }
         return precedence.get(token_type, 0)
 

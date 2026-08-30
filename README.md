@@ -26,7 +26,8 @@ revamped-interpreter/
 │   ├── primes.py
 │   ├── lists.py
 │   ├── membership.py
-│   └── break_continue.py
+│   ├── break_continue.py
+│   └── string_methods.py
 ├── src/
 │   ├── lexer/
 │   │   ├── __init__.py
@@ -60,8 +61,9 @@ revamped-interpreter/
 - **Logical operators**: `and`, `or` (short-circuit evaluation), `not` (unary)
 - **Arithmetic**: `+`, `-`, `*`, `/` (true division), `//` (integer division), `%` (modulo)
 - **Augmented assignment**: `+=`, `-=`, `*=`, `/=`, `//=`, `%=`
-- **Lists**: `[1, 2, 3]` literals, indexing `xs[0]`, slicing/iteration
+- **Lists**: `[1, 2, 3]` literals, indexing `xs[0]`, iteration, methods (`.append`, `.pop`)
 - **String indexing**: `s[0]`, `s[-1]` (negative indices supported)
+- **String methods**: `.upper()`, `.lower()`, `.strip()`, `.split()`, `.replace()`, `.startswith()`, `.endswith()`, `.find()`, `.count()`, plus method chaining
 - **Built-ins**: `print`, `len`, `range`, `str`, `int`, `float`, `type`
 - **Comments** starting with `#`
 - **REPL** with `>>> ` prompt
@@ -99,8 +101,6 @@ factorial of 7 is 5040
 - No dicts, sets, or user-defined classes with attributes
 - No modules, packages, or `import` resolution
 - No `try/except`, `with`, comprehensions, lambdas, decorators
-- No string methods (`.upper()`, `.split()`, etc.)
-- No list methods (`.append()`, `.pop()`, etc.) - lists work for indexing/iteration only
 - No slicing `s[a:b]` (only single-index `s[i]`)
 
 ## Development
