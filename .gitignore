@@ -6,11 +6,9 @@ __pycache__/
 .Python
 build/
 develop-eggs/
-dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -19,6 +17,10 @@ wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+
+# NOTE: `dist/` and bare `lib/` are not ignored at the top level
+# because the new `web/` frontend has its own `dist/` (Vite build)
+# and `web/src/lib/` (TS source dir). Those are scoped below.
 
 # Virtual environments
 venv/
@@ -41,3 +43,10 @@ htmlcov/
 
 # Logs
 *.log
+
+# Node / frontend
+web/node_modules/
+web/dist/
+web/dist-node/
+web/*.tsbuildinfo
+

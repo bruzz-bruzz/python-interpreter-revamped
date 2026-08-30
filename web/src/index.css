@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-ink-900 text-slate-100 antialiased;
+    font-feature-settings: 'cv11', 'ss01', 'ss03';
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-ink-600 rounded-full;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-ink-500;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium
+           transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+           focus:outline-none focus:ring-2 focus:ring-accent-500/40;
+  }
+  .btn-primary {
+    @apply btn bg-accent-500 text-white hover:bg-accent-400 shadow-glow;
+  }
+  .btn-ghost {
+    @apply btn bg-ink-700 text-slate-200 hover:bg-ink-600;
+  }
+  .btn-danger {
+    @apply btn bg-error/10 text-error hover:bg-error/20;
+  }
+
+  .panel {
+    @apply rounded-lg border border-ink-600 bg-ink-800/70 backdrop-blur-sm;
+  }
+}
+
+/* CodeMirror tweaks */
+.cm-editor {
+  @apply h-full rounded-lg overflow-hidden;
+  font-size: 14px;
+}
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+.cm-scroller {
+  font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+.cm-gutters {
+  @apply bg-ink-800 border-r border-ink-600 !important;
+}
+.cm-activeLine,
+.cm-activeLineGutter {
+  @apply bg-ink-700/50 !important;
+}

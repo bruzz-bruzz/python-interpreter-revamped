@@ -50,6 +50,31 @@ revamped-interpreter/
     ├── test_lexer.py
     ├── test_parser.py
     └── test_interpreter.py
+└── web/                     # Browser-based playground (Vite + React + TS + Tailwind)
+    ├── index.html
+    ├── package.json
+    ├── vite.config.ts
+    ├── tailwind.config.js
+    ├── postcss.config.js
+    ├── tsconfig.json
+    ├── tsconfig.node.json
+    ├── public/
+    │   └── favicon.svg
+    └── src/
+        ├── main.tsx
+        ├── App.tsx
+        ├── index.css
+        ├── components/
+        │   ├── Editor.tsx   # CodeMirror editor (Python highlighting)
+        │   ├── Output.tsx   # stdout / stderr panel
+        │   ├── Toolbar.tsx  # Run / Stop / Clear / Example picker
+        │   └── Header.tsx
+        ├── python/
+        │   ├── pyodide.ts             # Pyodide loader + FS bootstrap
+        │   └── interpreter-bridge.ts  # Streams code → Pyodide → output
+        └── lib/
+            ├── examples.ts  # Bundled example programs
+            └── storage.ts   # localStorage persistence
 ```
 
 ## Features
@@ -83,6 +108,25 @@ python interpreter.py
 ### Run the test suite
 ```bash
 python -m unittest discover -s tests -v
+```
+
+### Run the browser playground
+The `web/` directory contains a Vite + React + TypeScript + Tailwind
+front-end that runs the same interpreter in the browser via
+[Pyodide](https://pyodide.org/). The Python source files are bundled
+into the JS at build time, so the dev server doesn't need a Python
+toolchain installed.
+
+```bash
+cd web
+npm install
+npm run dev    # http://localhost:5173
+```
+
+To produce a static build:
+```bash
+cd web
+npm run build  # outputs web/dist/
 ```
 
 ## Example Session
