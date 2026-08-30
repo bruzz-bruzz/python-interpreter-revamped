@@ -1,7 +1,7 @@
-# Sum the numbers 1..10 using a while loop
+# Sum the numbers 1..10 using a for loop and augmented assignment.
+# Demonstrates: for-loops, range(), augmented assignment (+=), and print().
+
 total = 0
-i = 1
-while i <= 10:
-    total = total + i
-    i = i + 1
+for i in range(1, 11):
+    total += i
 print("sum 1..10 =", total)
