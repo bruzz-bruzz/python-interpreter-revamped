@@ -167,6 +167,17 @@ class ParserTests(unittest.TestCase):
         # else becomes the inner IfStatement's else_body
         self.assertIsNotNone(stmt.else_body[0].else_body)
 
+    def test_augmented_assignment_desugars(self):
+        # `x += 1` should parse to AssignmentExpression(target=Variable(x), value=BinaryExpression(x + 1))
+        program = parse("x += 1")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.AssignmentExpression)
+        self.assertIsInstance(expr.target, ast.Variable)
+        self.assertEqual(expr.target.name, "x")
+        self.assertIsInstance(expr.value, ast.BinaryExpression)
+        self.assertEqual(expr.value.operator.value, "PLUS")
+
 
 if __name__ == "__main__":
     unittest.main()

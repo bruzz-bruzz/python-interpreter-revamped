@@ -172,6 +172,35 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "div6\n")
 
+    def test_augmented_assignment_plus_equal(self):
+        out, _ = run("x = 5\nx += 3\nprint(x)")
+        self.assertEqual(out, "8\n")
+
+    def test_augmented_assignment_compound(self):
+        # Use a sequence of augmented assignments to update a running value
+        src = (
+            "x = 10\n"
+            "x -= 4\n"   # 6
+            "x *= 3\n"   # 18
+            "x //= 5\n"  # 3
+            "x %= 4\n"   # 3
+            "x += 1\n"   # 4
+            "print(x)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "4\n")
+
+    def test_augmented_assignment_in_loop(self):
+        # Use += to accumulate a sum
+        src = (
+            "total = 0\n"
+            "for i in range(1, 6):\n"
+            "    total += i\n"
+            "print(total)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "15\n")
+
 
 if __name__ == "__main__":
     unittest.main()

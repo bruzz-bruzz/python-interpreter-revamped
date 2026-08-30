@@ -98,6 +98,29 @@ class Parser:
                 # Right-associative assignment
                 right = self.parse_expression(token_prec - 1)
                 left = AssignmentExpression(left, right)
+            elif token.type in (TokenType.PLUSEQUAL, TokenType.MINUSEQUAL,
+                                TokenType.MULTIPLYEQUAL, TokenType.DIVIDEEQUAL,
+                                TokenType.INTEGERDIVIDEEQUAL,
+                                TokenType.MODULOEQUAL):
+                # Augmented assignment. The left side must be a simple variable.
+                if not isinstance(left, Variable):
+                    raise SyntaxError(
+                        f"Augmented assignment target must be a variable at "
+                        f"line {token.line}"
+                    )
+                # Map the augmented-assignment token to its underlying operator
+                underlying = {
+                    TokenType.PLUSEQUAL: TokenType.PLUS,
+                    TokenType.MINUSEQUAL: TokenType.MINUS,
+                    TokenType.MULTIPLYEQUAL: TokenType.MULTIPLY,
+                    TokenType.DIVIDEEQUAL: TokenType.DIVIDE,
+                    TokenType.INTEGERDIVIDEEQUAL: TokenType.INTEGER_DIVIDE,
+                    TokenType.MODULOEQUAL: TokenType.MODULO,
+                }[token.type]
+                right = self.parse_expression(token_prec - 1)
+                # Desugar: x += y  ==>  x = x + y
+                new_value = BinaryExpression(left, underlying, right)
+                left = AssignmentExpression(left, new_value)
             elif token.type == TokenType.LPAREN:
                 # Function call (highest precedence, left-associative)
                 args = self.parse_argument_list()
@@ -156,6 +179,12 @@ class Parser:
         """
         precedence = {
             TokenType.EQUAL: 1,           # lowest (assignment, right-assoc)
+            TokenType.PLUSEQUAL: 1,       # augmented assignment
+            TokenType.MINUSEQUAL: 1,
+            TokenType.MULTIPLYEQUAL: 1,
+            TokenType.DIVIDEEQUAL: 1,
+            TokenType.INTEGERDIVIDEEQUAL: 1,
+            TokenType.MODULOEQUAL: 1,
             TokenType.EQUAL_EQUAL: 3,     # comparisons
             TokenType.NOT_EQUAL: 3,
             TokenType.LESS: 3,

@@ -22,6 +22,13 @@ class TokenType(Enum):
     INTEGER_DIVIDE = "INTEGER_DIVIDE"
     MODULO = "MODULO"
     EQUAL = "EQUAL"
+    # Augmented assignment
+    PLUSEQUAL = "PLUSEQUAL"
+    MINUSEQUAL = "MINUSEQUAL"
+    MULTIPLYEQUAL = "MULTIPLYEQUAL"
+    DIVIDEEQUAL = "DIVIDEEQUAL"
+    INTEGERDIVIDEEQUAL = "INTEGERDIVIDEEQUAL"
+    MODULOEQUAL = "MODULOEQUAL"
     EQUAL_EQUAL = "EQUAL_EQUAL"
     NOT_EQUAL = "NOT_EQUAL"
     LESS = "LESS"
@@ -86,6 +93,13 @@ class Lexer:
         ('NOT_EQUAL', r'!='),
         ('LESS_EQUAL', r'<='),
         ('GREATER_EQUAL', r'>='),
+        # Augmented assignment (must come BEFORE the single-char operators)
+        ('PLUSEQUAL', r'\+='),
+        ('MINUSEQUAL', r'-='),
+        ('MULTIPLYEQUAL', r'\*='),
+        ('INTEGERDIVIDEEQUAL', r'//='),
+        ('DIVIDEEQUAL', r'/='),
+        ('MODULOEQUAL', r'%='),
         ('PLUS', r'\+'),
         ('MINUS', r'-'),
         ('MULTIPLY', r'\*'),

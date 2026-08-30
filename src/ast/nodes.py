@@ -139,6 +139,18 @@ class AssignmentExpression(Expression):
         return f"Assign({self.target} = {self.value})"
 
 
+class AugmentedAssignmentExpression(Expression):
+    """Augmented assignment expression (e.g., x += 1, x *= 2)"""
+
+    def __init__(self, target: Expression, operator: TokenType, value: Expression):
+        self.target = target
+        self.operator = operator
+        self.value = value
+
+    def __str__(self) -> str:
+        return f"AugAssign({self.target} {self.operator.value} {self.value})"
+
+
 # === Function Call ===
 
 class FunctionCall(Expression):

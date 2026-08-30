@@ -90,6 +90,26 @@ class LexerTests(unittest.TestCase):
             types, [TokenType.DIVIDE, TokenType.INTEGER_DIVIDE, TokenType.MODULO]
         )
 
+    def test_augmented_assignment_operators(self):
+        # `+=`, `-=`, `*=`, `/=`, `//=`, `%=` should each be single tokens,
+        # not a single-char operator followed by `=`.
+        for src, expected_type in [
+            ("x += 1", TokenType.PLUSEQUAL),
+            ("x -= 1", TokenType.MINUSEQUAL),
+            ("x *= 1", TokenType.MULTIPLYEQUAL),
+            ("x /= 1", TokenType.DIVIDEEQUAL),
+            ("x //= 1", TokenType.INTEGERDIVIDEEQUAL),
+            ("x %= 1", TokenType.MODULOEQUAL),
+        ]:
+            tokens = lex(src)
+            self.assertEqual(
+                tokens[1].type, expected_type,
+                f"Failed for {src!r}: expected {expected_type}, got {tokens[1].type}"
+            )
+            # And the `=` part must not appear as a separate EQUAL token
+            self.assertNotIn(TokenType.EQUAL, [t.type for t in tokens],
+                             f"Stray EQUAL token in {src!r}")
+
 
 if __name__ == "__main__":
     unittest.main()
