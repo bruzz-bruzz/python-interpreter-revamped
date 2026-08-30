@@ -21,6 +21,7 @@ revamped-interpreter/
 ├── examples/               # Example programs the interpreter can run
 │   ├── hello.py
 │   ├── factorial.py
+│   ├── fizzbuzz.py
 │   └── sum.py
 ├── src/
 │   ├── lexer/
@@ -52,7 +53,7 @@ revamped-interpreter/
 - **Control flow**: `if/else`, `while`, `for x in iterable:`, `return`
 - **Functions** with closures, recursion, and parameter binding
 - **Comparisons**: `==`, `!=`, `<`, `>`, `<=`, `>=`
-- **Arithmetic**: `+`, `-`, `*`, `/` (true division)
+- **Arithmetic**: `+`, `-`, `*`, `/` (true division), `//` (integer division), `%` (modulo)
 - **Built-ins**: `print`, `len`, `range`, `str`, `int`, `float`, `type`
 - **Comments** starting with `#`
 - **REPL** with `>>> ` prompt
@@ -90,7 +91,7 @@ factorial of 7 is 5040
 - No lists, dicts, or user-defined classes with attributes
 - No modules, packages, or `import` resolution
 - No `try/except`, `with`, comprehensions, lambdas, decorators
-- No integer division `//` or modulo `%` yet
+- No `elif` chains (only `if`/`else` with nesting)
 - No augmented assignment (`+=`, `-=`, etc.)
 
 ## Development
