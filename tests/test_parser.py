@@ -216,6 +216,32 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(expr.index, ast.Integer)
         self.assertEqual(expr.index.value, 0)
 
+    def test_list_literal(self):
+        # `[1, 2, 3]` should parse as a ListLiteral with three Integer elements
+        program = parse("[1, 2, 3]")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.ListLiteral)
+        self.assertEqual(len(expr.elements), 3)
+        self.assertEqual(expr.elements[0].value, 1)
+        self.assertEqual(expr.elements[1].value, 2)
+        self.assertEqual(expr.elements[2].value, 3)
+
+    def test_empty_list_literal(self):
+        program = parse("[]")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.ListLiteral)
+        self.assertEqual(expr.elements, [])
+
+    def test_list_with_expressions(self):
+        # List elements can be arbitrary expressions
+        program = parse("[1 + 2, 3 * 4]")
+        stmt = program.statements[0]
+        expr = stmt.expression
+        self.assertIsInstance(expr, ast.ListLiteral)
+        self.assertEqual(len(expr.elements), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

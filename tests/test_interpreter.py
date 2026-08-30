@@ -250,6 +250,50 @@ class InterpreterTests(unittest.TestCase):
         with self.assertRaises(IndexError):
             run('s = "hi"\nprint(s[5])')
 
+    def test_list_literal_and_indexing(self):
+        src = (
+            "nums = [10, 20, 30]\n"
+            "print(nums[0])\n"
+            "print(nums[1])\n"
+            "print(nums[2])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "10\n20\n30\n")
+
+    def test_list_iteration_with_for(self):
+        src = (
+            "for n in [1, 2, 3]:\n"
+            "    print(n)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "1\n2\n3\n")
+
+    def test_list_with_expressions(self):
+        src = (
+            "print([1 + 2, 3 * 4, 10 - 5])\n"
+        )
+        out, _ = run(src)
+        # The print function calls str() on its args. The built-in print
+        # is the host Python's, so it calls repr on the list, which looks
+        # like "[3, 12, 5]".
+        self.assertEqual(out, "[3, 12, 5]\n")
+
+    def test_empty_list_length(self):
+        src = "print(len([]))"
+        out, _ = run(src)
+        self.assertEqual(out, "0\n")
+
+    def test_list_sum_via_for(self):
+        # Compute the sum of a list using a for loop
+        src = (
+            "total = 0\n"
+            "for n in [1, 2, 3, 4, 5]:\n"
+            "    total += n\n"
+            "print(total)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "15\n")
+
 
 if __name__ == "__main__":
     unittest.main()

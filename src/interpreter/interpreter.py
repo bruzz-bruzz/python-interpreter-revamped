@@ -174,6 +174,11 @@ class Interpreter:
             raise RuntimeError(f"Type error in binary op {op.value}: {exc}")
         raise RuntimeError(f"Unsupported binary operator: {op.value}")
 
+    def visit_ListLiteral(self, node: ast.ListLiteral) -> List[Any]:
+        # Lists are just Python lists at runtime, which lets us reuse
+        # iteration, len(), indexing, and slicing for free.
+        return [self.execute(el) for el in node.elements]
+
     def visit_SubscriptExpression(self, node: ast.SubscriptExpression) -> Any:
         target = self.execute(node.target)
         index = self.execute(node.index)

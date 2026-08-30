@@ -184,6 +184,16 @@ class SubscriptExpression(Expression):
         return f"Subscript({self.target}[{self.index}])"
 
 
+class ListLiteral(Expression):
+    """List literal expression (e.g., [1, 2, 3])"""
+
+    def __init__(self, elements: List[Expression]):
+        self.elements = elements
+
+    def __str__(self) -> str:
+        return f"List([{', '.join(str(e) for e in self.elements)}])"
+
+
 # === Statements ===
 
 class ExpressionStatement(Statement):

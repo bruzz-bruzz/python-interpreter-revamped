@@ -156,6 +156,19 @@ class Parser:
             inner = self.parse_expression()
             self.expect(TokenType.RPAREN)
             return inner
+        if token.type == TokenType.LBRACKET:
+            # List literal: [e1, e2, ...]
+            self.advance()  # consume '['
+            elements: List[Expression] = []
+            if self.current_token.type != TokenType.RBRACKET:
+                elements.append(self.parse_expression())
+                while self.current_token.type == TokenType.COMMA:
+                    self.advance()
+                    if self.current_token.type == TokenType.RBRACKET:
+                        break  # trailing comma
+                    elements.append(self.parse_expression())
+            self.expect(TokenType.RBRACKET)
+            return ListLiteral(elements)
         if token.type == TokenType.INTEGER:
             self.advance()
             return Integer(token.value)
