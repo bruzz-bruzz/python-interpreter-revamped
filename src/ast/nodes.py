@@ -265,6 +265,20 @@ class ReturnStatement(Statement):
         return f"Return({self.value})"
 
 
+class BreakStatement(Statement):
+    """`break` statement: exit the innermost loop."""
+
+    def __str__(self) -> str:
+        return "Break()"
+
+
+class ContinueStatement(Statement):
+    """`continue` statement: skip to the next iteration of the innermost loop."""
+
+    def __str__(self) -> str:
+        return "Continue()"
+
+
 class ClassDefinition(Statement):
     """Class definition (e.g., class Foo: ...)"""
 

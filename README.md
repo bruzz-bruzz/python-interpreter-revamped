@@ -25,7 +25,8 @@ revamped-interpreter/
 │   ├── sum.py
 │   ├── primes.py
 │   ├── lists.py
-│   └── membership.py
+│   ├── membership.py
+│   └── break_continue.py
 ├── src/
 │   ├── lexer/
 │   │   ├── __init__.py
@@ -53,7 +54,7 @@ revamped-interpreter/
 ## Features
 - **Lexical analysis** with proper ordering of multi-character operators (`==`, `<=`, `>=`, `!=`) and INDENT/DEDENT token emission
 - **Pratt-style precedence parsing** for expressions with correct operator associativity
-- **Control flow**: `if/elif/else`, `while`, `for x in iterable:`, `return`
+- **Control flow**: `if/elif/else`, `while`, `for x in iterable:`, `return`, `break`, `continue`
 - **Functions** with closures, recursion, and parameter binding
 - **Comparisons**: `==`, `!=`, `<`, `>`, `<=`, `>=`, `in`, `not in`, `is`
 - **Logical operators**: `and`, `or` (short-circuit evaluation), `not` (unary)

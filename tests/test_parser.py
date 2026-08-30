@@ -270,6 +270,31 @@ class ParserTests(unittest.TestCase):
         self.assertIsInstance(expr, ast.UnaryExpression)
         self.assertEqual(expr.operator_value, "not")
 
+    def test_break_parses(self):
+        # `break` should parse as a BreakStatement
+        program = parse("break")
+        stmt = program.statements[0]
+        self.assertIsInstance(stmt, ast.BreakStatement)
+
+    def test_continue_parses(self):
+        # `continue` should parse as a ContinueStatement
+        program = parse("continue")
+        stmt = program.statements[0]
+        self.assertIsInstance(stmt, ast.ContinueStatement)
+
+    def test_break_in_for(self):
+        # `break` inside a for-loop should still parse
+        src = (
+            "for i in range(5):\n"
+            "    if i == 2:\n"
+            "        break\n"
+        )
+        program = parse(src)
+        for_stmt = program.statements[0]
+        if_stmt = for_stmt.body[0]
+        break_stmt = if_stmt.body[0]
+        self.assertIsInstance(break_stmt, ast.BreakStatement)
+
 
 if __name__ == "__main__":
     unittest.main()

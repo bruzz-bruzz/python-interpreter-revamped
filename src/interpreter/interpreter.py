@@ -15,6 +15,14 @@ class ReturnSignal(Exception):
         self.value = value
 
 
+class BreakSignal(Exception):
+    """Internal control-flow signal used to exit a loop on `break`."""
+
+
+class ContinueSignal(Exception):
+    """Internal control-flow signal used to restart a loop iteration on `continue`."""
+
+
 class Function:
     """A user-defined function object."""
 
@@ -74,8 +82,13 @@ class Interpreter:
             self.global_scope[name] = builtin_type
 
     def interpret(self, program: ast.Program) -> None:
-        for statement in program.statements:
-            self.execute(statement)
+        try:
+            for statement in program.statements:
+                self.execute(statement)
+        except BreakSignal:
+            raise RuntimeError("'break' outside loop")
+        except ContinueSignal:
+            raise RuntimeError("'continue' not properly in loop")
 
     def execute(self, node: ast.ASTNode) -> Any:
         method_name = f"visit_{type(node).__name__}"
@@ -282,8 +295,13 @@ class Interpreter:
 
     def visit_WhileStatement(self, node: ast.WhileStatement) -> None:
         while self._is_truthy(self.execute(node.condition)):
-            for stmt in node.body:
-                self.execute(stmt)
+            try:
+                for stmt in node.body:
+                    self.execute(stmt)
+            except ContinueSignal:
+                continue
+            except BreakSignal:
+                break
 
     def visit_ForStatement(self, node: ast.ForStatement) -> None:
         iterable = self.execute(node.iterable)
@@ -291,8 +309,23 @@ class Interpreter:
             raise RuntimeError("For-loop target is not iterable")
         for value in iterable:
             self.current_scope[node.target] = value
-            for stmt in node.body:
-                self.execute(stmt)
+            try:
+                for stmt in node.body:
+                    self.execute(stmt)
+            except ContinueSignal:
+                continue
+            except BreakSignal:
+                break
+
+    def visit_BreakStatement(self, node: ast.BreakStatement) -> None:
+        # Throw to unwind the loop; the loop's visit_WhileStatement /
+        # visit_ForStatement catches this and breaks out.
+        raise BreakSignal()
+
+    def visit_ContinueStatement(self, node: ast.ContinueStatement) -> None:
+        # Throw to unwind the current iteration; the loop catches this
+        # and continues with the next value.
+        raise ContinueSignal()
 
     def visit_ReturnStatement(self, node: ast.ReturnStatement) -> None:
         value = None if node.value is None else self.execute(node.value)

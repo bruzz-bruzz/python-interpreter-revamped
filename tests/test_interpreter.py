@@ -341,6 +341,88 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "False\nTrue\n")
 
+    def test_break_in_for(self):
+        # `break` exits the innermost loop early
+        src = (
+            "for i in range(5):\n"
+            "    if i == 3:\n"
+            "        break\n"
+            "    print(i)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "0\n1\n2\n")
+
+    def test_continue_in_for(self):
+        # `continue` skips the rest of the current iteration
+        src = (
+            "for i in range(5):\n"
+            "    if i == 2:\n"
+            "        continue\n"
+            "    print(i)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "0\n1\n3\n4\n")
+
+    def test_break_in_while(self):
+        src = (
+            "x = 0\n"
+            "while True:\n"
+            "    if x >= 3:\n"
+            "        break\n"
+            "    print(x)\n"
+            "    x += 1\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "0\n1\n2\n")
+
+    def test_continue_in_while(self):
+        src = (
+            "x = 0\n"
+            "while x < 5:\n"
+            "    x += 1\n"
+            "    if x == 3:\n"
+            "        continue\n"
+            "    print(x)\n"
+        )
+        out, _ = run(src)
+        # x=1,2,3(skip),4,5
+        self.assertEqual(out, "1\n2\n4\n5\n")
+
+    def test_break_outside_loop_raises(self):
+        with self.assertRaises(RuntimeError):
+            run("break")
+
+    def test_continue_outside_loop_raises(self):
+        with self.assertRaises(RuntimeError):
+            run("continue")
+
+    def test_break_does_not_escape_function(self):
+        # `break` inside a function's loop should not escape to outer scope
+        src = (
+            "def f():\n"
+            "    for i in range(5):\n"
+            "        if i == 2:\n"
+            "            break\n"
+            "    return 'done'\n"
+            "print(f())\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "done\n")
+
+    def test_break_with_outer_loop(self):
+        # `break` should only break the innermost loop
+        src = (
+            "for i in range(3):\n"
+            "    for j in range(3):\n"
+            "        if j == 1:\n"
+            "            break\n"
+            "        print(i, j)\n"
+        )
+        out, _ = run(src)
+        # Each outer iteration: print (0,0), then break inner. So we get
+        # (0,0), (1,0), (2,0) on separate lines.
+        self.assertEqual(out, "0 0\n1 0\n2 0\n")
+
 
 if __name__ == "__main__":
     unittest.main()

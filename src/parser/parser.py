@@ -45,6 +45,12 @@ class Parser:
             elif keyword == 'return':
                 self.advance()
                 return self.parse_return_statement()
+            elif keyword == 'break':
+                self.advance()
+                return self.parse_break_statement()
+            elif keyword == 'continue':
+                self.advance()
+                return self.parse_continue_statement()
             elif keyword == 'class':
                 self.advance()
                 return self.parse_class_definition()
@@ -419,6 +425,14 @@ class Parser:
                                             TokenType.COLON, TokenType.SEMICOLON):
             value = self.parse_expression()
         return ReturnStatement(value)
+
+    def parse_break_statement(self) -> BreakStatement:
+        """Parse a `break` statement. The 'break' keyword has been consumed."""
+        return BreakStatement()
+
+    def parse_continue_statement(self) -> ContinueStatement:
+        """Parse a `continue` statement. The 'continue' keyword has been consumed."""
+        return ContinueStatement()
 
     def parse_class_definition(self) -> ClassDefinition:
         """Parse a class definition: class Name: body"""
