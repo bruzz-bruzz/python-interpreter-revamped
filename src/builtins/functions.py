@@ -53,7 +53,50 @@ class BuiltInFunctions:
             return "list"
         if isinstance(obj, dict):
             return "dict"
+        if isinstance(obj, set):
+            return "set"
+        if isinstance(obj, tuple):
+            return "tuple"
         return type(obj).__name__
+
+    @staticmethod
+    def _sorted(obj: Any) -> list:
+        """Return a new sorted list from the items in the iterable."""
+        return sorted(obj)
+
+    @staticmethod
+    def _sum(obj: Any) -> int:
+        """Return the sum of the items in the iterable."""
+        return sum(obj)
+
+    @staticmethod
+    def _min(*args: Any) -> Any:
+        """Return the minimum of the given values or iterable."""
+        if len(args) == 1:
+            return min(args[0])
+        return min(*args)
+
+    @staticmethod
+    def _max(*args: Any) -> Any:
+        """Return the maximum of the given values or iterable."""
+        if len(args) == 1:
+            return max(args[0])
+        return max(*args)
+
+    @staticmethod
+    def _abs(obj: Any) -> int:
+        """Return the absolute value of a number."""
+        return abs(obj)
+
+    @staticmethod
+    def _ord(obj: Any) -> int:
+        """Return the integer ordinal of a single character."""
+        return ord(obj)
+
+    @staticmethod
+    def _chr(obj: Any) -> str:
+        """Return the character for the given integer ordinal."""
+        return chr(obj)
 
     @classmethod
     def all_functions(cls) -> Dict[str, Callable]:
@@ -66,4 +109,11 @@ class BuiltInFunctions:
             "int": cls._int,
             "float": cls._float,
             "type": cls._type,
+            "sorted": cls._sorted,
+            "sum": cls._sum,
+            "min": cls._min,
+            "max": cls._max,
+            "abs": cls._abs,
+            "ord": cls._ord,
+            "chr": cls._chr,
         }

@@ -497,6 +497,195 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "3\n[1, 2]\n")
 
+    # --- Tuple tests ---
+    def test_tuple_literal(self):
+        out, _ = run("print((1, 2, 3))")
+        self.assertEqual(out, "(1, 2, 3)\n")
+
+    def test_tuple_one_element(self):
+        # Single-element tuple needs a trailing comma
+        out, _ = run("print((42,))")
+        self.assertEqual(out, "(42,)\n")
+
+    def test_tuple_empty(self):
+        out, _ = run("print(())")
+        self.assertEqual(out, "()\n")
+
+    def test_tuple_indexing(self):
+        out, _ = run("t = (10, 20, 30)\nprint(t[0])\nprint(t[-1])\n")
+        self.assertEqual(out, "10\n30\n")
+
+    def test_tuple_len(self):
+        out, _ = run("print(len((1, 2, 3, 4)))")
+        self.assertEqual(out, "4\n")
+
+    def test_tuple_for_iteration(self):
+        out, _ = run("for x in (1, 2, 3):\n    print(x)\n")
+        self.assertEqual(out, "1\n2\n3\n")
+
+    def test_tuple_in_expression(self):
+        out, _ = run("print((1, 2) + (3, 4))")
+        self.assertEqual(out, "(1, 2, 3, 4)\n")
+
+    def test_tuple_nested_in_list(self):
+        out, _ = run("x = [(1, 2), (3, 4)]\nprint(len(x))\nprint(x[0])\n")
+        self.assertEqual(out, "2\n(1, 2)\n")
+
+    def test_tuple_from_function_return(self):
+        src = (
+            "def pair(a, b):\n"
+            "    return (a, b)\n"
+            "p = pair(99, 100)\n"
+            "print(p[0])\n"
+            "print(p[1])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "99\n100\n")
+
+
+class DataStructureTests(unittest.TestCase):
+    """Tests for dictionaries and sets (tuples are in InterpreterTests)."""
+
+    def test_dict_literal(self):
+        out, _ = run("print({'a': 1, 'b': 2})")
+        self.assertEqual(out, "{'a': 1, 'b': 2}\n")
+
+    def test_dict_empty(self):
+        out, _ = run("print({})")
+        self.assertEqual(out, "{}\n")
+
+    def test_dict_indexing(self):
+        src = (
+            "d = {'x': 10, 'y': 20}\n"
+            "print(d['x'])\n"
+            "print(d['y'])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "10\n20\n")
+
+    def test_dict_assignment(self):
+        src = (
+            "d = {}\n"
+            "d['key'] = 42\n"
+            "print(d['key'])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "42\n")
+
+    def test_dict_overwrite(self):
+        src = (
+            "d = {'a': 1}\n"
+            "d['a'] = 99\n"
+            "print(d['a'])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "99\n")
+
+    def test_dict_membership(self):
+        src = (
+            "d = {'a': 1}\n"
+            "print('a' in d)\n"
+            "print('z' in d)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "True\nFalse\n")
+
+    def test_dict_for_iteration(self):
+        # Iterating over a dict gives keys
+        src = (
+            "d = {'a': 1, 'b': 2}\n"
+            "for k in d:\n"
+            "    print(k)\n"
+        )
+        out, _ = run(src)
+        # Order is preserved in modern Python; our dict literal inserts in
+        # declared order.
+        self.assertEqual(out, "a\nb\n")
+
+    def test_dict_len(self):
+        out, _ = run("print(len({'x': 1, 'y': 2, 'z': 3}))")
+        self.assertEqual(out, "3\n")
+
+    def test_dict_methods_via_native(self):
+        # We rely on native dicts, so .keys(), .values(), .items() all work
+        # out of the box as attribute access on dict.
+        src = (
+            "d = {'a': 1, 'b': 2}\n"
+            "print(len(d.keys()))\n"
+            "print(len(d.values()))\n"
+            "print(len(d.items()))\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "2\n2\n2\n")
+
+    def test_dict_nested(self):
+        src = (
+            "d = {'outer': {'inner': 99}}\n"
+            "print(d['outer']['inner'])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "99\n")
+
+    def test_dict_from_function_return(self):
+        src = (
+            "def make_dict():\n"
+            "    return {'x': 1, 'y': 2}\n"
+            "d = make_dict()\n"
+            "print(d['x'])\n"
+            "print(d['y'])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "1\n2\n")
+
+    # --- Set tests ---
+    def test_set_literal(self):
+        out, _ = run("print({1, 2, 3})")
+        self.assertEqual(out, "{1, 2, 3}\n")
+
+    def test_set_empty_is_dict(self):
+        # {} is a dict literal in Python and ours. Empty set needs set().
+        out, _ = run("print(type({}))")
+        # Our `type()` builtin returns the type name as a string, e.g. "dict"
+        self.assertEqual(out, "dict\n")
+
+    def test_set_for_iteration(self):
+        src = (
+            "total = 0\n"
+            "for x in {10, 20, 30}:\n"
+            "    total = total + x\n"
+            "print(total)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "60\n")
+
+    def test_set_len(self):
+        out, _ = run("print(len({1, 2, 3, 4}))")
+        self.assertEqual(out, "4\n")
+
+    def test_set_deduplication(self):
+        out, _ = run("print({1, 2, 2, 3, 3, 3})")
+        self.assertEqual(out, "{1, 2, 3}\n")
+
+    def test_set_membership(self):
+        src = (
+            "s = {1, 2, 3}\n"
+            "print(2 in s)\n"
+            "print(99 in s)\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "True\nFalse\n")
+
+    def test_set_methods_via_native(self):
+        # Native sets give us union, intersection, etc. for free.
+        src = (
+            "a = {1, 2, 3}\n"
+            "b = {3, 4, 5}\n"
+            "print(len(a.union(b)))\n"
+            "print(len(a.intersection(b)))\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "5\n1\n")
+
 
 if __name__ == "__main__":
     unittest.main()

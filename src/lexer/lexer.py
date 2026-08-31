@@ -146,10 +146,22 @@ class Lexer:
         self.column = 1
         indent_stack: List[int] = [0]
         at_line_start = True
+        # Implicit line continuation: when we are inside any open
+        # bracket (LPAREN, LBRACKET, LBRACE), newlines are ignored and
+        # INDENT/DEDENT tokens are not emitted. This lets us write
+        # multi-line list, dict, set, tuple, function-call, and
+        # function-definition literals.
+        bracket_depth: int = 0
 
         while self.pos < len(self.source):
-            # Handle indentation at the start of a line
-            if at_line_start:
+            # Handle indentation at the start of a line.
+            # Skip this whole dance when we're inside an unclosed bracket,
+            # so that multi-line expressions like:
+            #     d = {
+            #         "a": 1,
+            #     }
+            # work without spurious INDENT/DEDENT tokens.
+            if at_line_start and bracket_depth == 0:
                 at_line_start = False
                 # Measure indent (spaces, treating tabs as 4 spaces)
                 indent = 0
@@ -177,6 +189,13 @@ class Lexer:
                                 f"Indentation does not match any outer level at line {self.line}"
                             )
                     # `at_line_start` is reset implicitly at the next newline
+            elif at_line_start and bracket_depth > 0:
+                # Inside a bracket: skip leading whitespace so we don't
+                # emit a stray INDENT token.
+                at_line_start = False
+                while self.pos < len(self.source) and self.source[self.pos] in (' ', '\t'):
+                    self.pos += 1
+                    self.column += 1
 
             if self.pos >= len(self.source):
                 break
@@ -203,7 +222,13 @@ class Lexer:
                 else:
                     token = Token(TokenType.IDENTIFIER, value, self.line, self.column)
             elif token_type == 'NEWLINE':
-                token = Token(TokenType.NEWLINE, value, self.line, self.column)
+                # Inside an unclosed bracket, ignore the newline entirely
+                # (implicit line continuation). Otherwise, emit the NEWLINE
+                # token so the parser can detect end-of-statement.
+                if bracket_depth == 0:
+                    token = Token(TokenType.NEWLINE, value, self.line, self.column)
+                else:
+                    token = None
                 self.line += 1
                 self.column = 1
                 at_line_start = True
@@ -218,6 +243,18 @@ class Lexer:
             else:
                 token_type_enum = self._get_token_type_from_string(token_type)
                 token = Token(token_type_enum, value, self.line, self.column)
+
+            # Track bracket depth so we can ignore newlines and indentation
+            # inside ( ... ), [ ... ], or { ... } for implicit line
+            # continuation.
+            if token_type == 'LPAREN' or token_type == 'LBRACKET' or token_type == 'LBRACE':
+                bracket_depth += 1
+            elif token_type == 'RPAREN' or token_type == 'RBRACKET' or token_type == 'RBRACE':
+                bracket_depth -= 1
+                if bracket_depth < 0:
+                    raise SyntaxError(
+                        f"Unmatched closing bracket {value!r} at line {self.line}"
+                    )
 
             if token is not None:
                 self.tokens.append(token)

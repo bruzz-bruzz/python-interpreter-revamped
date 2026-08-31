@@ -106,9 +106,26 @@ class Interpreter:
         raise NameError(f"Name {name!r} is not defined")
 
     def visit_AssignmentExpression(self, node: ast.AssignmentExpression) -> Any:
-        if not isinstance(node.target, ast.Variable):
-            raise RuntimeError("Assignment target must be a variable")
         value = self.execute(node.value)
+        # Dict/list subscript assignment: d["key"] = val or arr[i] = val
+        if isinstance(node.target, ast.SubscriptExpression):
+            target_obj = self.execute(node.target.target)
+            index = self.execute(node.target.index)
+            if isinstance(target_obj, list):
+                if not isinstance(index, int):
+                    raise TypeError("list index must be an integer")
+                if index < 0:
+                    index += len(target_obj)
+                target_obj[index] = value
+                return value
+            if isinstance(target_obj, dict) and not target_obj.get("__name__"):
+                target_obj[index] = value
+                return value
+            raise TypeError(
+                f"'{type(target_obj).__name__}' object does not support item assignment"
+            )
+        if not isinstance(node.target, ast.Variable):
+            raise RuntimeError("Assignment target must be a variable or subscript")
         for scope in reversed(self.scope_stack):
             if node.target.name in scope:
                 scope[node.target.name] = value
@@ -214,6 +231,24 @@ class Interpreter:
         # iteration, len(), indexing, and slicing for free.
         return [self.execute(el) for el in node.elements]
 
+    def visit_TupleLiteral(self, node: ast.TupleLiteral) -> tuple:
+        # Tuples are just Python tuples at runtime, which gives us
+        # immutability, iteration, len(), indexing, and slicing for free.
+        return tuple(self.execute(el) for el in node.elements)
+
+    def visit_DictLiteral(self, node: ast.DictLiteral) -> dict:
+        # Dicts are just Python dicts at runtime, which gives us
+        # iteration (over keys), len(), membership (`in`), and the full
+        # set of dict methods for free.
+        return {self.execute(k): self.execute(v) for k, v in node.entries}
+
+    def visit_SetLiteral(self, node: ast.SetLiteral) -> set:
+        # Sets are just Python sets at runtime, which gives us
+        # iteration, len(), membership (`in`), and the full set of
+        # set methods for free. Note that Python's set construction
+        # silently deduplicates duplicate values, matching `set()` behavior.
+        return {self.execute(el) for el in node.elements}
+
     def visit_SubscriptExpression(self, node: ast.SubscriptExpression) -> Any:
         target = self.execute(node.target)
         index = self.execute(node.index)
@@ -240,19 +275,59 @@ class Interpreter:
             if index < 0 or index >= len(target):
                 raise IndexError(f"list index out of range: {index}")
             return target[index]
+        # Tuples support indexing (same rules as lists)
+        if isinstance(target, tuple):
+            if not isinstance(index, int):
+                raise TypeError(
+                    f"Tuple indices must be integers, not {type(index).__name__}"
+                )
+            if index < 0:
+                index += len(target)
+            if index < 0 or index >= len(target):
+                raise IndexError(f"tuple index out of range: {index}")
+            return target[index]
+        # Dicts support indexing by any hashable key.
+        if isinstance(target, dict) and not target.get("__name__"):
+            try:
+                return target[index]
+            except KeyError:
+                raise KeyError(f"{index!r}")
         raise TypeError(
             f"'{type(target).__name__}' object is not subscriptable"
         )
 
     def visit_AttributeAccess(self, node: ast.AttributeAccess) -> Any:
         # We support attribute access on strings (read-only), lists
-        # (read-only) and user-defined objects (see ClassDefinition).
+        # (read-only), dicts (read-only), sets (read-only), and
+        # user-defined objects (see ClassDefinition).
         target = self.execute(node.target)
         attr = node.attribute
         if isinstance(target, str):
             return self._str_attr(target, attr)
         if isinstance(target, list):
             return self._list_attr(target, attr)
+        if isinstance(target, dict) and not target.get("__name__"):
+            # Plain dict (not a class): expose native dict methods.
+            method = getattr(target, attr, None)
+            if method is None:
+                raise AttributeError(
+                    f"'dict' object has no attribute {attr!r}"
+                )
+            return method
+        if isinstance(target, set):
+            method = getattr(target, attr, None)
+            if method is None:
+                raise AttributeError(
+                    f"'set' object has no attribute {attr!r}"
+                )
+            return method
+        if isinstance(target, tuple):
+            method = getattr(target, attr, None)
+            if method is None:
+                raise AttributeError(
+                    f"'tuple' object has no attribute {attr!r}"
+                )
+            return method
         if isinstance(target, dict) and target.get("__name__"):
             # class object: look up method
             return target[attr]
@@ -269,6 +344,12 @@ class Interpreter:
             return self._str_method(target, method_name, args)
         if isinstance(target, list):
             return self._list_method(target, method_name, args)
+        if isinstance(target, dict) and not target.get("__name__"):
+            return self._native_method(target, "dict", method_name, args)
+        if isinstance(target, set):
+            return self._native_method(target, "set", method_name, args)
+        if isinstance(target, tuple):
+            return self._native_method(target, "tuple", method_name, args)
         if isinstance(target, dict) and target.get("__name__"):
             method = target.get(method_name)
             if not callable(method):
@@ -280,6 +361,24 @@ class Interpreter:
         raise AttributeError(
             f"'{type(target).__name__}' object has no method {method_name!r}"
         )
+
+    def _native_method(self, value: Any, type_name: str, method_name: str,
+                       args: list) -> Any:
+        """Dispatch a method call to a native Python type (dict/set/tuple).
+
+        These types aren't handled by the per-type _str_method / _list_method
+        helpers because their dispatch is generic: just look the method up
+        and call it with the provided args.
+        """
+        method = getattr(value, method_name, None)
+        if method is None or not callable(method):
+            raise AttributeError(
+                f"'{type_name}' object has no method {method_name!r}"
+            )
+        try:
+            return method(*args)
+        except TypeError as e:
+            raise RuntimeError(f"{type_name}.{method_name}(): {e}")
 
     # ---- string attribute / method dispatch ----
     def _str_attr(self, value: str, attr: str) -> Any:

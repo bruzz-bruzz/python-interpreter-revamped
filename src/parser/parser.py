@@ -1,6 +1,6 @@
 """Parser for Python interpreter - converts tokens into AST"""
 
-from typing import List, Optional
+from typing import List, Optional, Tuple as TupleType
 from src.ast.nodes import *
 from src.lexer.lexer import Token, TokenType
 
@@ -203,9 +203,26 @@ class Parser:
 
         if token.type == TokenType.LPAREN:
             self.advance()  # consume '('
-            inner = self.parse_expression()
+            # Empty tuple: ()
+            if self.current_token.type == TokenType.RPAREN:
+                self.advance()  # consume ')'
+                return TupleLiteral([])
+            # Parse first element
+            elements: List[Expression] = [self.parse_expression()]
+            # Tuple if followed by a comma
+            if self.current_token.type == TokenType.COMMA:
+                self.advance()  # consume ','
+                while self.current_token.type != TokenType.RPAREN:
+                    elements.append(self.parse_expression())
+                    if self.current_token.type == TokenType.COMMA:
+                        self.advance()  # consume ','
+                    else:
+                        break
+                self.expect(TokenType.RPAREN)
+                return TupleLiteral(elements)
+            # Otherwise, it's a grouping (parenthesized expression)
             self.expect(TokenType.RPAREN)
-            return inner
+            return elements[0]
         if token.type == TokenType.LBRACKET:
             # List literal: [e1, e2, ...]
             self.advance()  # consume '['
@@ -219,6 +236,44 @@ class Parser:
                     elements.append(self.parse_expression())
             self.expect(TokenType.RBRACKET)
             return ListLiteral(elements)
+        if token.type == TokenType.LBRACE:
+            # { ... }: disambiguate between empty-dict, dict, and set literal.
+            # Rules (matching CPython):
+            #   {}             -> empty dict
+            #   {e1: v1, ...}  -> dict literal
+            #   {e1, e2, ...}  -> set literal
+            self.advance()  # consume '{'
+            # Empty literal: `{}` is an empty dict (no way to write empty set).
+            if self.current_token.type == TokenType.RBRACE:
+                self.advance()  # consume '}'
+                return DictLiteral([])
+            # Parse the first expression; then dispatch on what follows.
+            first = self.parse_expression()
+            if self.current_token.type == TokenType.COLON:
+                # Dict literal: {k: v, k: v, ...}
+                entries: List[TupleType[Expression, Expression]] = []
+                self.advance()  # consume ':'
+                value = self.parse_expression()
+                entries.append((first, value))
+                while self.current_token.type == TokenType.COMMA:
+                    self.advance()
+                    if self.current_token.type == TokenType.RBRACE:
+                        break  # trailing comma
+                    key = self.parse_expression()
+                    self.expect(TokenType.COLON)
+                    value = self.parse_expression()
+                    entries.append((key, value))
+                self.expect(TokenType.RBRACE)
+                return DictLiteral(entries)
+            # Otherwise: set literal. We have the first element already.
+            elements: List[Expression] = [first]
+            while self.current_token.type == TokenType.COMMA:
+                self.advance()
+                if self.current_token.type == TokenType.RBRACE:
+                    break  # trailing comma
+                elements.append(self.parse_expression())
+            self.expect(TokenType.RBRACE)
+            return SetLiteral(elements)
         if token.type == TokenType.INTEGER:
             self.advance()
             return Integer(token.value)
