@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc -b",
     "build": "tsc -b && vite build",
+    "vercel-build": "vite build",
     "preview": "vite preview",
     "lint": "tsc -b --noEmit"
   },

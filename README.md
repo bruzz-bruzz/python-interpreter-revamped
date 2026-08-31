@@ -129,6 +129,15 @@ cd web
 npm run build  # outputs web/dist/
 ```
 
+### Deploy to Vercel
+The repo ships with a `vercel.json` at the root, so a one-click import
+on Vercel works out of the box. The build command, install command,
+output directory, SPA rewrite, and asset-cache headers are all
+configured there. See [`web/README.md`](web/README.md) for full
+details.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fbruzz-bruzz%2Fpython-interpreter-revamped&project-name=python-interpreter-playground&root-directory=.)
+
 ## Example Session
 ```text
 $ python interpreter.py examples/factorial.py
