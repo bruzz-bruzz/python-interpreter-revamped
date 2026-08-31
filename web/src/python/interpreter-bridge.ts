@@ -92,11 +92,14 @@ try:
     import os
     with open("/user.py", "w", encoding="utf-8") as f:
         f.write(USER_SOURCE)
-    from lexer.lexer import Lexer
-    from parser.parser import Parser
-    from interpreter.interpreter import Interpreter
+    # Import the runtime via the in-tree package path ('/playground'
+    # is on sys.path — see pyodide.ts). These match the same path
+    # the CLI uses.
+    from src.lexer.lexer import Lexer
+    from src.parser.parser import Parser
+    from src.interpreter.interpreter import Interpreter
 
-    tokens = Lexer(USER_SOURCE, filename="user.py").tokenize()
+    tokens = Lexer(USER_SOURCE).tokenize()
     program = Parser(tokens).parse()
     Interpreter().interpret(program)
 except SystemExit as e:

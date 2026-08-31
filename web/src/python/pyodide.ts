@@ -7,9 +7,16 @@
  *
  * On first call, we:
  *   1. Load Pyodide.
- *   2. Write every Python source file from /src/** into Pyodide's
- *      in-memory filesystem at /lib/.
- *   3. Add /lib to sys.path and import the package modules.
+ *   2. Reconstruct the repository layout under /playground in
+ *      Pyodide's in-memory filesystem: every `.py` file in
+ *      `src/` (and its sub-packages) is written to
+ *      `/playground/src/...`. This way the in-tree absolute
+ *      imports — e.g. `from src.ast.nodes import *` inside
+ *      `parser.py` — resolve just like they do in the CLI.
+ *   3. Add `/playground` to `sys.path` and warm-import
+ *      `src.parser.parser` / `src.interpreter.interpreter` so
+ *      Pyodide catches any syntax / typo errors at install time
+ *      rather than on the first user click.
  *
  * Subsequent calls just re-run the user's program against the
  * already-loaded interpreter.
@@ -20,6 +27,8 @@ import type { PyodideInterface } from 'pyodide';
 // The Python sources are imported as raw strings via Vite's
 // `?raw` query suffix. This keeps everything in one bundle and
 // avoids any CORS / fetch issues at runtime.
+import srcInit from '../../../src/__init__.py?raw';
+import lexerInit from '../../../src/lexer/__init__.py?raw';
 import lexerSrc from '../../../src/lexer/lexer.py?raw';
 import astInit from '../../../src/ast/__init__.py?raw';
 import astNodesSrc from '../../../src/ast/nodes.py?raw';
@@ -33,6 +42,9 @@ import builtinsTypes from '../../../src/builtins/types.py?raw';
 
 const PYODIDE_VERSION = '0.27.4';
 const PYODIDE_CDN = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+
+/** Virtual location of the in-browser "repo root". */
+const PROJ_ROOT = '/playground';
 
 let pyodidePromise: Promise<PyodideInterface> | null = null;
 
@@ -69,20 +81,22 @@ export async function getPyodide(): Promise<PyodideInterface> {
 }
 
 async function installInterpreter(pyodide: PyodideInterface): Promise<void> {
-  // Lay the package out under /lib/ in Pyodide's virtual FS.
-  // We need to create the directories first; mkdirs is a no-op
-  // if a parent is missing, so walk the tree.
+  // Lay the package out under PROJ_ROOT/src/ in Pyodide's virtual FS,
+  // mirroring the on-disk layout so the in-tree absolute imports
+  // (`from src.ast.nodes import *` etc.) resolve unchanged.
   const files: Array<[string, string]> = [
-    ['/lib/lexer/lexer.py', lexerSrc],
-    ['/lib/ast/__init__.py', astInit],
-    ['/lib/ast/nodes.py', astNodesSrc],
-    ['/lib/parser/__init__.py', parserInit],
-    ['/lib/parser/parser.py', parserSrc],
-    ['/lib/interpreter/__init__.py', interpInit],
-    ['/lib/interpreter/interpreter.py', interpreterSrc],
-    ['/lib/builtins/__init__.py', builtinsInit],
-    ['/lib/builtins/functions.py', builtinsFunctions],
-    ['/lib/builtins/types.py', builtinsTypes],
+    [`${PROJ_ROOT}/src/__init__.py`, srcInit],
+    [`${PROJ_ROOT}/src/lexer/__init__.py`, lexerInit],
+    [`${PROJ_ROOT}/src/lexer/lexer.py`, lexerSrc],
+    [`${PROJ_ROOT}/src/ast/__init__.py`, astInit],
+    [`${PROJ_ROOT}/src/ast/nodes.py`, astNodesSrc],
+    [`${PROJ_ROOT}/src/parser/__init__.py`, parserInit],
+    [`${PROJ_ROOT}/src/parser/parser.py`, parserSrc],
+    [`${PROJ_ROOT}/src/interpreter/__init__.py`, interpInit],
+    [`${PROJ_ROOT}/src/interpreter/interpreter.py`, interpreterSrc],
+    [`${PROJ_ROOT}/src/builtins/__init__.py`, builtinsInit],
+    [`${PROJ_ROOT}/src/builtins/functions.py`, builtinsFunctions],
+    [`${PROJ_ROOT}/src/builtins/types.py`, builtinsTypes],
   ];
 
   // Build the directory tree once, then write the files.
@@ -104,17 +118,25 @@ async function installInterpreter(pyodide: PyodideInterface): Promise<void> {
 
   // Now make Python import them. We need to be inside a `runPythonAsync`
   // so we can use the `import` statement (and because Pyodide 0.27 made
-  // it the recommended API surface).
+  // it the recommended API surface). We also pre-import the three
+  // entry-point classes so any import / typo error surfaces here
+  // (with a clean stack trace) rather than on the first user click.
   await pyodide.runPythonAsync(`
-import sys
-sys.path.insert(0, '/lib')
+import sys, os
+sys.path.insert(0, ${JSON.stringify(PROJ_ROOT)})
 
-# Import the runtime pieces. We do NOT add them to a package;
-# they're stand-alone modules and import each other with absolute
-# imports.
-from lexer.lexer import Lexer
-from parser.parser import Parser
-from interpreter.interpreter import Interpreter
+# Verify the FS layout matches expectations. (Cheap, and the
+# error message is much friendlier than a bare ModuleNotFoundError.)
+for _p in (
+    ${JSON.stringify(`${PROJ_ROOT}/src`)},
+    ${JSON.stringify(`${PROJ_ROOT}/src/parser/parser.py`)},
+):
+    if not os.path.exists(_p):
+        raise RuntimeError(f"playground FS bootstrap failed: {_p} is missing")
+
+from src.lexer.lexer import Lexer
+from src.parser.parser import Parser
+from src.interpreter.interpreter import Interpreter
 
 print("[pyodide] interpreter ready", file=sys.stderr)
 `);
