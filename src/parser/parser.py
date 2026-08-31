@@ -203,9 +203,26 @@ class Parser:
 
         if token.type == TokenType.LPAREN:
             self.advance()  # consume '('
-            inner = self.parse_expression()
+            # Empty tuple: ()
+            if self.current_token.type == TokenType.RPAREN:
+                self.advance()  # consume ')'
+                return TupleLiteral([])
+            # Parse first element
+            elements: List[Expression] = [self.parse_expression()]
+            # Tuple if followed by a comma
+            if self.current_token.type == TokenType.COMMA:
+                self.advance()  # consume ','
+                while self.current_token.type != TokenType.RPAREN:
+                    elements.append(self.parse_expression())
+                    if self.current_token.type == TokenType.COMMA:
+                        self.advance()  # consume ','
+                    else:
+                        break
+                self.expect(TokenType.RPAREN)
+                return TupleLiteral(elements)
+            # Otherwise, it's a grouping (parenthesized expression)
             self.expect(TokenType.RPAREN)
-            return inner
+            return elements[0]
         if token.type == TokenType.LBRACKET:
             # List literal: [e1, e2, ...]
             self.advance()  # consume '['

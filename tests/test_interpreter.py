@@ -497,6 +497,51 @@ class InterpreterTests(unittest.TestCase):
         out, _ = run(src)
         self.assertEqual(out, "3\n[1, 2]\n")
 
+    # --- Tuple tests ---
+    def test_tuple_literal(self):
+        out, _ = run("print((1, 2, 3))")
+        self.assertEqual(out, "(1, 2, 3)\n")
+
+    def test_tuple_one_element(self):
+        # Single-element tuple needs a trailing comma
+        out, _ = run("print((42,))")
+        self.assertEqual(out, "(42,)\n")
+
+    def test_tuple_empty(self):
+        out, _ = run("print(())")
+        self.assertEqual(out, "()\n")
+
+    def test_tuple_indexing(self):
+        out, _ = run("t = (10, 20, 30)\nprint(t[0])\nprint(t[-1])\n")
+        self.assertEqual(out, "10\n30\n")
+
+    def test_tuple_len(self):
+        out, _ = run("print(len((1, 2, 3, 4)))")
+        self.assertEqual(out, "4\n")
+
+    def test_tuple_for_iteration(self):
+        out, _ = run("for x in (1, 2, 3):\n    print(x)\n")
+        self.assertEqual(out, "1\n2\n3\n")
+
+    def test_tuple_in_expression(self):
+        out, _ = run("print((1, 2) + (3, 4))")
+        self.assertEqual(out, "(1, 2, 3, 4)\n")
+
+    def test_tuple_nested_in_list(self):
+        out, _ = run("x = [(1, 2), (3, 4)]\nprint(len(x))\nprint(x[0])\n")
+        self.assertEqual(out, "2\n(1, 2)\n")
+
+    def test_tuple_from_function_return(self):
+        src = (
+            "def pair(a, b):\n"
+            "    return (a, b)\n"
+            "p = pair(99, 100)\n"
+            "print(p[0])\n"
+            "print(p[1])\n"
+        )
+        out, _ = run(src)
+        self.assertEqual(out, "99\n100\n")
+
 
 if __name__ == "__main__":
     unittest.main()

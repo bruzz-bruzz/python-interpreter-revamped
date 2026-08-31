@@ -1,6 +1,6 @@
 """AST node definitions for Python interpreter"""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Tuple as TupleType
 from src.lexer.lexer import TokenType
 
 
@@ -221,6 +221,46 @@ class ListLiteral(Expression):
 
     def __str__(self) -> str:
         return f"List([{', '.join(str(e) for e in self.elements)}])"
+
+
+class TupleLiteral(Expression):
+    """Tuple literal expression (e.g., (1, 2), (), (42,))
+
+    Tuples are immutable, ordered collections.
+    """
+
+    def __init__(self, elements: List[Expression]):
+        self.elements = elements
+
+    def __str__(self) -> str:
+        return f"Tuple(({', '.join(str(e) for e in self.elements)}))"
+
+
+class DictLiteral(Expression):
+    """Dictionary literal expression (e.g., {"a": 1, "b": 2}).
+
+    Dictionaries are mutable, unordered key-value maps.
+    """
+
+    def __init__(self, entries: List[TupleType[Expression, Expression]]):
+        self.entries = entries  # list of (key, value) pairs
+
+    def __str__(self) -> str:
+        pairs = ", ".join(f"{k}: {v}" for k, v in self.entries)
+        return f"Dict({{{pairs}}})"
+
+
+class SetLiteral(Expression):
+    """Set literal expression (e.g., {1, 2, 3}).
+
+    Sets are mutable, unordered collections of unique, hashable elements.
+    """
+
+    def __init__(self, elements: List[Expression]):
+        self.elements = elements
+
+    def __str__(self) -> str:
+        return f"Set({{{', '.join(str(e) for e in self.elements)}}})"
 
 
 # === Statements ===

@@ -214,6 +214,11 @@ class Interpreter:
         # iteration, len(), indexing, and slicing for free.
         return [self.execute(el) for el in node.elements]
 
+    def visit_TupleLiteral(self, node: ast.TupleLiteral) -> tuple:
+        # Tuples are just Python tuples at runtime, which gives us
+        # immutability, iteration, len(), indexing, and slicing for free.
+        return tuple(self.execute(el) for el in node.elements)
+
     def visit_SubscriptExpression(self, node: ast.SubscriptExpression) -> Any:
         target = self.execute(node.target)
         index = self.execute(node.index)
@@ -239,6 +244,17 @@ class Interpreter:
                 index += len(target)
             if index < 0 or index >= len(target):
                 raise IndexError(f"list index out of range: {index}")
+            return target[index]
+        # Tuples support indexing (same rules as lists)
+        if isinstance(target, tuple):
+            if not isinstance(index, int):
+                raise TypeError(
+                    f"Tuple indices must be integers, not {type(index).__name__}"
+                )
+            if index < 0:
+                index += len(target)
+            if index < 0 or index >= len(target):
+                raise IndexError(f"tuple index out of range: {index}")
             return target[index]
         raise TypeError(
             f"'{type(target).__name__}' object is not subscriptable"

@@ -20,5 +20,7 @@ class BuiltInTypes:
             "bool": bool,
             "list": list,
             "dict": dict,
+            "tuple": tuple,
+            "set": set,
             "NoneType": type(None),
         }
