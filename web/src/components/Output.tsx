@@ -1,87 +1,61 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-export type OutputLine = { channel: 'stdout' | 'stderr'; text: string };
+export interface OutputLine {
+  kind: 'stdout' | 'stderr';
+  text: string;
+}
 
 interface OutputProps {
   lines: OutputLine[];
-  status: 'idle' | 'loading' | 'running' | 'done' | 'error';
-  onClear: () => void;
+  className?: string;
 }
 
-const STATUS_LABEL: Record<OutputProps['status'], string> = {
-  idle: 'Ready',
-  loading: 'Loading Python runtime…',
-  running: 'Running…',
-  done: 'Finished',
-  error: 'Error',
-};
+/**
+ * The output pane. Renders the captured stdout/stderr lines from the
+ * interpreter. Auto-scrolls to the bottom whenever new lines arrive.
+ */
+const Output: React.FC<OutputProps> = ({ lines, className = '' }) => {
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
-const STATUS_COLOR: Record<OutputProps['status'], string> = {
-  idle: 'text-slate-400',
-  loading: 'text-warn',
-  running: 'text-accent-400',
-  done: 'text-success',
-  error: 'text-error',
-};
-
-export function Output({ lines, status, onClear }: OutputProps) {
-  const scrollRef = useRef<HTMLDivElement | null>(null);
-
-  // Auto-scroll to the bottom as new lines stream in.
   useEffect(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
-  }, [lines.length, status]);
+    bottomRef.current?.scrollIntoView({ behavior: 'auto', block: 'end' });
+  }, [lines]);
 
   return (
-    <div className="panel flex h-full flex-col overflow-hidden">
-      <div className="flex items-center justify-between border-b border-ink-600 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-block h-2 w-2 rounded-full ${
-              status === 'running'
-                ? 'bg-accent-400 animate-pulse-slow'
-                : status === 'error'
-                  ? 'bg-error'
-                  : status === 'done'
-                    ? 'bg-success'
-                    : status === 'loading'
-                      ? 'bg-warn animate-pulse-slow'
-                      : 'bg-ink-500'
-            }`}
-          />
-          <span className={`text-xs font-medium ${STATUS_COLOR[status]}`}>
-            {STATUS_LABEL[status]}
-          </span>
-        </div>
-        <button onClick={onClear} className="btn-ghost text-xs">
-          Clear
-        </button>
+    <div
+      className={`flex h-full flex-col overflow-hidden rounded-md bg-slate-950 ring-1 ring-slate-800 ${className}`}
+    >
+      <div className="flex items-center justify-between border-b border-slate-800 bg-slate-900/60 px-3 py-1.5 text-xs uppercase tracking-wider text-slate-400">
+        <span>Output</span>
+        <span className="text-slate-500">{lines.length} line(s)</span>
       </div>
-
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-auto bg-ink-900/60 p-3 font-mono text-[13px] leading-relaxed"
-      >
+      <div className="scrollbar-thin flex-1 overflow-auto p-3 font-mono text-sm leading-relaxed">
         {lines.length === 0 ? (
-          <div className="text-slate-500 italic">
-            Press <kbd className="rounded bg-ink-700 px-1.5 py-0.5 text-[11px] not-italic">Run</kbd> or
-            hit <kbd className="rounded bg-ink-700 px-1.5 py-0.5 text-[11px] not-italic">Ctrl+Enter</kbd> to execute your program.
+          <div className="text-slate-600">
+            (no output yet — press <span className="text-slate-400">Run</span> or{' '}
+            <kbd className="rounded border border-slate-700 bg-slate-800 px-1.5 py-0.5 text-[0.7rem] text-slate-300">
+              Ctrl/⌘ + Enter
+            </kbd>{' '}
+            to execute the program)
           </div>
         ) : (
-          lines.map((line, i) => (
+          lines.map((line, idx) => (
             <div
-              key={i}
-              className={`whitespace-pre-wrap break-words ${
-                line.channel === 'stderr' ? 'text-error' : 'text-slate-200'
-              } animate-fade-in`}
+              key={idx}
+              className={
+                line.kind === 'stderr'
+                  ? 'whitespace-pre-wrap text-rose-300'
+                  : 'whitespace-pre-wrap text-slate-100'
+              }
             >
               {line.text}
             </div>
           ))
         )}
+        <div ref={bottomRef} />
       </div>
     </div>
   );
-}
+};
+
+export default Output;
