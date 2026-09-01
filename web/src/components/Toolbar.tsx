@@ -1,91 +1,83 @@
-import { EXAMPLES } from '../lib/examples';
+import React from 'react';
 
 interface ToolbarProps {
-  isRunning: boolean;
-  isReady: boolean;
   onRun: () => void;
-  onStop: () => void;
-  onClearOutput: () => void;
-  onPickExample: (id: string) => void;
-  activeExampleId: string | null;
+  onStop?: () => void;
+  onReset?: () => void;
+  onClearOutput?: () => void;
+  running: boolean;
+  hasCode: boolean;
+  className?: string;
 }
 
-export function Toolbar({
-  isRunning,
-  isReady,
+/**
+ * The toolbar that sits above the editor. Holds Run / Stop / Reset / Clear buttons.
+ */
+const Toolbar: React.FC<ToolbarProps> = ({
   onRun,
   onStop,
+  onReset,
   onClearOutput,
-  onPickExample,
-  activeExampleId,
-}: ToolbarProps) {
+  running,
+  hasCode,
+  className = '',
+}) => {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-ink-600 bg-ink-800/50 px-4 py-2">
+    <div
+      className={`flex items-center justify-between gap-2 border-b border-slate-800 bg-slate-900/40 px-4 py-2 ${className}`}
+    >
       <div className="flex items-center gap-2">
-        {isRunning ? (
-          <button onClick={onStop} className="btn-danger" disabled={!isReady}>
-            <StopIcon /> Stop
+        {running ? (
+          <button
+            type="button"
+            onClick={onStop}
+            className="inline-flex items-center gap-1.5 rounded-md bg-rose-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-rose-500 focus:outline-none focus:ring-2 focus:ring-rose-400"
+          >
+            <span className="inline-block h-2 w-2 rounded-sm bg-white" />
+            Stop
           </button>
         ) : (
-          <button onClick={onRun} className="btn-primary" disabled={!isReady}>
-            <PlayIcon /> Run
+          <button
+            type="button"
+            onClick={onRun}
+            disabled={!hasCode}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500 px-3 py-1.5 text-sm font-medium text-slate-900 shadow-sm transition hover:bg-emerald-400 focus:outline-none focus:ring-2 focus:ring-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span className="inline-block">▶</span>
+            Run
           </button>
         )}
-        <button onClick={onClearOutput} className="btn-ghost" title="Clear output">
-          <BroomIcon /> Clear
-        </button>
+        {onReset && (
+          <button
+            type="button"
+            onClick={onReset}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            Reset
+          </button>
+        )}
+        {onClearOutput && (
+          <button
+            type="button"
+            onClick={onClearOutput}
+            className="inline-flex items-center gap-1.5 rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-sm font-medium text-slate-200 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500"
+          >
+            Clear output
+          </button>
+        )}
       </div>
-
-      <div className="mx-2 hidden h-6 w-px bg-ink-600 sm:block" />
-
-      <label className="flex items-center gap-2 text-xs text-slate-400">
-        Example:
-        <select
-          className="rounded-md border border-ink-600 bg-ink-700 px-2 py-1 text-sm text-slate-100
-                     focus:border-accent-500 focus:outline-none focus:ring-2 focus:ring-accent-500/40"
-          value={activeExampleId ?? ''}
-          onChange={(e) => onPickExample(e.target.value)}
-          disabled={isRunning}
-        >
-          <option value="" disabled>
-            Choose…
-          </option>
-          {EXAMPLES.map((ex) => (
-            <option key={ex.id} value={ex.id}>
-              {ex.name}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="ml-auto flex items-center gap-2 text-[11px] text-slate-500">
-        <kbd className="rounded bg-ink-700 px-1.5 py-0.5">Ctrl</kbd>
-        <span>+</span>
-        <kbd className="rounded bg-ink-700 px-1.5 py-0.5">Enter</kbd>
-        <span>to run</span>
+      <div className="text-xs text-slate-500">
+        {running ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
+            Running…
+          </span>
+        ) : (
+          <span>Ready</span>
+        )}
       </div>
     </div>
   );
-}
+};
 
-function PlayIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M8 5v14l11-7z" />
-    </svg>
-  );
-}
-function StopIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <rect x="6" y="6" width="12" height="12" rx="1.5" />
-    </svg>
-  );
-}
-function BroomIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-      <path d="M3 21h18M5 21V11l7-7 7 7v10M9 21v-6h6v6" />
-    </svg>
-  );
-}
+export default Toolbar;
