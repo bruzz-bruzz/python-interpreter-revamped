@@ -1,9 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": null,
-  "buildCommand": "cd web && npm install --no-audit --no-fund && npm run build",
-  "installCommand": "echo 'web/ subproject is installed inside buildCommand'",
-  "outputDirectory": "web/dist",
+  "framework": "vite",
+  "rootDirectory": "web",
+  "installCommand": "npm install --no-audit --no-fund --prefer-offline",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ],
